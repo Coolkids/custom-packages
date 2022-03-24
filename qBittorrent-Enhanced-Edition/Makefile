@@ -47,7 +47,7 @@ MAKE_VARS += \
 TARGET_LDFLAGS += -Wl,--gc-sections,--as-needed
 
 define Package/$(PKG_NAME)/conffiles
-/etc/qbittorrent
+/etc/qBittorrent
 endef
 
 define Package/$(PKG_NAME)/install

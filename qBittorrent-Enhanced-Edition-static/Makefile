@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=qBittorrent-Enhanced-Edition-static
-PKG_VERSION:=4.4.0.10
+PKG_VERSION:=4.4.2.10
 PKG_RELEASE=$(AUTORELEASE)
 
 ifeq ($(ARCH),x86_64)

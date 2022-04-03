@@ -49,7 +49,7 @@ endef
 define Package/libndpi2/config
 config LIBNDPI_GCRYPT
 	bool "GCrypt support"
-	depends on PACKAGE_libndpi
+	depends on PACKAGE_libndpi2
 	default n
 	help
 	  This option enables QUIC client hello decryption.

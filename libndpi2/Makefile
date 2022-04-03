@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=libndpi
+PKG_NAME:=libndpi2
 PKG_VERSION:=4.2
 PKG_RELEASE:=1
 
@@ -32,7 +32,7 @@ ifeq ($(CONFIG_LIBNDPI_GCRYPT),)
 CONFIGURE_ARGS += --disable-gcrypt
 endif
 
-define Package/libndpi
+define Package/libndpi2
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Library for deep-packet inspection add ndpiReader
@@ -40,13 +40,13 @@ define Package/libndpi
   DEPENDS:=$(CXX_DEPENDS) +LIBNDPI_GCRYPT:libgcrypt +libpcap +libjson-c
 endef
 
-define Package/libndpi/description
+define Package/libndpi2/description
   nDPI is an open source LGPLv3 library for deep-packet inspection.
   Based on OpenDPI it includes ntop extensions.
   add ndpiReader
 endef
 
-define Package/libndpi/config
+define Package/libndpi2/config
 config LIBNDPI_GCRYPT
 	bool "GCrypt support"
 	depends on PACKAGE_libndpi
@@ -75,7 +75,7 @@ define Build/InstallDev
 		$(1)/usr/lib/pkgconfig/
 endef
 
-define Package/libndpi/install
+define Package/libndpi2/install
 	$(INSTALL_DIR) $(1)/usr/lib/
 	$(CP) $(PKG_BUILD_DIR)/src/lib/libndpi.so* \
 		$(1)/usr/lib/
@@ -84,4 +84,4 @@ define Package/libndpi/install
 		$(1)/usr/bin/
 endef
 
-$(eval $(call BuildPackage,libndpi))
+$(eval $(call BuildPackage,libndpi2))

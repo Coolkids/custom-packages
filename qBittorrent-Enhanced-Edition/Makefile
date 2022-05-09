@@ -11,7 +11,6 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-release-$(PKG_VERSION)
 
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_LICENSE_FILES:=COPYING
-PKG_CPE_ID:=cpe:/a:qbittorrent:qbittorrent
 
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
@@ -28,7 +27,6 @@ define Package/qBittorrent-Enhanced-Edition
   TITLE:=bittorrent client programmed in C++ / Qt
   URL:=https://github.com/c0re100/qBittorrent-Enhanced-Edition
   DEPENDS:=+boost +libtorrent-rasterbar +qt5-core +qt5-network +qt5-sql +qt5-xml
-  PROVIDES:=qbittorrent
 endef
 
 define Package/qBittorrent-Enhanced-Edition/description

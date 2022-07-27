@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=v2ray-geodata
-PKG_VERSION:=202207162211
+PKG_VERSION:=202207262211
 PKG_RELEASE:=1
 
 PKG_LICENSE_FILES:=LICENSE
@@ -19,7 +19,7 @@ define Download/geoip
   URL:=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/download/$(GEOIP_VER)/
   URL_FILE:=geoip.dat
   FILE:=$(GEOIP_FILE)
-  HASH:=c1ec0e288b0c568257ff06e2c3bbef010917ace0d5aacd6df0e4fa6c3708c3d6
+  HASH:=465a2161417d31748cc843f48f4129fe3e4d16c6dc392d99f6cc2a656eeb4692
 endef
 
 GEOSITE_VER:=$(PKG_VERSION)
@@ -28,7 +28,7 @@ define Download/geosite
   URL:=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/download/$(GEOSITE_VER)/
   URL_FILE:=geosite.dat
   FILE:=$(GEOSITE_FILE)
-  HASH:=7ca5882ebc07c7ea5e24fc00d6aed256cf7c1dad2c3f75889313d6cb140166b5
+  HASH:=7e1d4e73e687f67a3a1b46860434e72386f127e5b21b394b11e23fa00af526ce
 endef
 
 define Package/v2ray-geodata/template

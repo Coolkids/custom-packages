@@ -1,0 +1,75 @@
+{
+  "name": "@linkedmink/luci-theme-material-components",
+  "version": "1.0.0-0",
+  "description": "",
+  "keywords": [
+    "OpenWrt",
+    "LuCI",
+    "Theme",
+    "Material Design"
+  ],
+  "homepage": "https://github.com/LinkedMink/luci-theme-material-components#readme",
+  "bugs": {
+    "url": "https://github.com/LinkedMink/luci-theme-material-components/issues",
+    "email": "harlan.sang@linkedmink.net"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Harlan Sang",
+    "email": "harlan.sang@linkedmink.net",
+    "url": "https://github.com/LinkedMink"
+  },
+  "funding": {
+    "type": "individual",
+    "url": "https://github.com/sponsors/LinkedMink"
+  },
+  "main": "htdocs/luci-static/resources/index.js",
+  "types": "htdocs/luci-static/resources/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LinkedMink/luci-theme-material-components.git"
+  },
+  "private": true,
+  "scripts": {
+    "start": "webpack serve --config webpack.dev.ts",
+    "build": "webpack --config webpack.prod.ts",
+    "postinstall": "husky install || cd .",
+    "lint": "echo NotImplemented",
+    "test:ci": "echo NotImplemented",
+    "version": "npm run build && git add ."
+  },
+  "dependencies": {
+    "@fontsource/roboto": "^4.5.8",
+    "@material/button": "^14.0.0",
+    "@material/data-table": "^14.0.0",
+    "@material/drawer": "^14.0.0",
+    "@material/icon-button": "^14.0.0",
+    "@material/linear-progress": "^14.0.0",
+    "@material/menu": "^14.0.0",
+    "@material/tab-bar": "^14.0.0",
+    "@material/textfield": "^14.0.0",
+    "@material/top-app-bar": "^14.0.0",
+    "@material/typography": "^14.0.0"
+  },
+  "devDependencies": {
+    "@tsconfig/node18": "^1.0.1",
+    "@types/node": "^18.11.18",
+    "css-loader": "^6.7.3",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.1.0",
+    "postcss": "^8.4.21",
+    "postcss-loader": "^7.0.2",
+    "postcss-preset-env": "^8.0.1",
+    "prettier": "^2.8.3",
+    "sass": "^1.58.0",
+    "sass-loader": "^13.2.0",
+    "style-loader": "^3.3.1",
+    "ts-loader": "^9.4.2",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.5",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1",
+    "webpack-dev-server": "^4.11.1",
+    "webpack-merge": "^5.8.0"
+  }
+}

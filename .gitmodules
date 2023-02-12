@@ -7,6 +7,3 @@
 [submodule "luci-theme-design"]
 	path = luci-theme-design
 	url = https://github.com/gngpp/luci-theme-design.git
-[submodule "luci-theme-material-components"]
-	path = luci-theme-material-components
-	url = https://github.com/LinkedMink/luci-theme-material-components.git

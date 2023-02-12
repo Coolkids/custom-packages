@@ -1,0 +1,19 @@
+.mdc-drawer-app-content {
+  flex: auto;
+  overflow: auto;
+  position: relative;
+  transition: 0.2s;
+}
+
+.main-content {
+  overflow: auto;
+  height: 100%;
+}
+
+.mdc-top-app-bar {
+  position: absolute;
+}
+
+.mdc-top-app-bar {
+  z-index: 7;
+}

@@ -1,0 +1,10 @@
+{
+  "extends": "@tsconfig/node18/tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["DOM"],
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+  }
+}

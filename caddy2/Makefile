@@ -6,7 +6,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=caddy2
+PKG_NAME:=caddy
 PKG_VERSION:=2.7.5
 PKG_RELEASE:=1
 

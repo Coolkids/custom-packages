@@ -11,5 +11,5 @@ start() {
 }
 
 stop() {
-        service_stop /usr/bin/caddy/caddy
+        service_stop /usr/bin/caddy
 }

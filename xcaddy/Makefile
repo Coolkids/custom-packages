@@ -14,7 +14,8 @@ include $(INCLUDE_DIR)/package.mk
 
 XCADDY_FILE:=caddy
 define Download/xcaddy
-  URL:=https://caddyserver.com/api/download?os=linux&arch=amd64&p=github.com%2Faksdb%2Fcaddy-cgi%2Fv2&p=github.com%2Fzhangjiayin%2Fcaddy-geoip2
+  URL:=https://caddyserver.com/api
+  URL_FILE:=download?os=linux&arch=amd64&p=github.com%2Faksdb%2Fcaddy-cgi%2Fv2&p=github.com%2Fzhangjiayin%2Fcaddy-geoip2
   FILE:=$(XCADDY_FILE)
   HASH:=skip
 endef
@@ -45,7 +46,7 @@ endef
 
 define Package/xcaddy/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(GO_PKG_BUILD_BIN_DIR)/caddy $(1)/usr/bin/caddy
+	$(INSTALL_BIN) $(DL_DIR)/$(XCADDY_FILE) $(1)/usr/bin/caddy
 	chmod +x $(1)/usr/bin/caddy
 	$(INSTALL_DIR) $(1)/etc/caddy
 	$(INSTALL_CONF) ./files/Caddyfile $(1)/etc/caddy/Caddyfile

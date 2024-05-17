@@ -65,12 +65,12 @@ endef
 
 define Package/sing-geoip/install
 	$(INSTALL_DIR) $(1)/usr/share/sing
-	$(INSTALL_DATA) $(DL_DIR)/$(GEOIP_FILE) $(1)/usr/share/sing/geoip.dat
+	$(INSTALL_DATA) $(DL_DIR)/$(GEOIP_FILE) $(1)/usr/share/singbox/geoip.db
 endef
 
 define Package/sing-geosite/install
 	$(INSTALL_DIR) $(1)/usr/share/sing
-	$(INSTALL_DATA) $(DL_DIR)/$(GEOSITE_FILE) $(1)/usr/share/sing/geosite.dat
+	$(INSTALL_DATA) $(DL_DIR)/$(GEOSITE_FILE) $(1)/usr/share/singbox/geosite.db
 endef
 
 $(eval $(call BuildPackage,sing-geoip))

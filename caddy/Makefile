@@ -7,12 +7,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=caddy
-PKG_VERSION:=2.7.5
+PKG_VERSION:=2.8.4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://codeload.github.com//caddyserver/caddy/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=eeaecc1ea18b7aa37ece168562beb1ab592767cbedfaa411040ae0301aaeeef1
+PKG_SOURCE_URL:=https://codeload.github.com/caddyserver/caddy/tar.gz/v$(PKG_VERSION)?
+PKG_HASH:=5c2e95ad9e688a18dd9d9099c8c132331e01e0bebd401183e8d9123372cf4fcc
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 

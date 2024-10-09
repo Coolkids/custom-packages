@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=xcaddy
-PKG_RELEASE:=2.7.5
+PKG_RELEASE:=2.8.4
 
 PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=Coolkid

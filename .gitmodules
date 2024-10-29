@@ -4,9 +4,3 @@
 [submodule "luci-app-pushbot"]
 	path = luci-app-pushbot
 	url = https://github.com/zzsj0928/luci-app-pushbot
-[submodule "luci-theme-alpha"]
-	path = luci-theme-alpha
-	url = https://github.com/derisamedia/luci-theme-alpha
-[submodule "luci-theme-alpha-alk-net"]
-	path = luci-theme-alpha-alk-net
-	url = https://github.com/derisamedia/luci-theme-alpha-alk-net

@@ -5,7 +5,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=geolite-mmdb
-PKG_RELEASE:=$(shell date "+%Y-%m-%d")
+PKG_RELEASE:=1
+PKG_VERSION:=$(shell date "+%Y-%m-%d")
 
 PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=Coolkid

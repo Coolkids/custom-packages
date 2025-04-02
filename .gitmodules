@@ -4,6 +4,3 @@
 [submodule "luci-app-pushbot"]
 	path = luci-app-pushbot
 	url = https://github.com/zzsj0928/luci-app-pushbot
-[submodule "luci-app-tailscale"]
-	path = luci-app-tailscale
-	url = https://github.com/asvow/luci-app-tailscale

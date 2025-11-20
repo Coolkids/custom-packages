@@ -4,3 +4,6 @@
 [submodule "luci-app-pushbot"]
 	path = luci-app-pushbot
 	url = https://github.com/zzsj0928/luci-app-pushbot
+[submodule "luci-app-dnsproxy"]
+	path = luci-app-dnsproxy
+	url = https://github.com/muink/luci-app-dnsproxy

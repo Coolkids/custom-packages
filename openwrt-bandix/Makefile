@@ -60,9 +60,7 @@ else ifeq ($(ARCH),powerpc64)
 else ifeq ($(ARCH),riscv64)
 	PKG_HASH:=ca76daf5d06b190d258a2981e9e015285928b0c28f9baafb355bdcd7c2d2bd55
 else ifeq ($(ARCH),x86_64)
-	ifeq ($(CONFIG_USE_GLIBC),y)
-		override RUSTC_TARGET_ARCH := x86_64-unknown-linux-musl
-	endif
+	PKG_SOURCE:=bandix-$(RUST_BANDIX_VERSION)-x86_64-unknown-linux-musl.tar.gz
 	PKG_HASH:=70d81f874f0e949206a10f6511dc71b42ad5d22bfe8d3dafa8e7f247124b7a84
 else
 	PKG_HASH:=dummy

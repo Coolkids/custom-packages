@@ -5,7 +5,7 @@ PKG_VERSION:=0.12.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://github.com/timsaya/bandix/archive/refs/tags/v$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://codeload.github.com/timsaya/bandix/tar.gz/v$(PKG_VERSION)?
 PKG_HASH:=B3975A90AFACCDAF789DFD30E05F932EDE17A8E4FB68A0BE599C59B0FB61F1B4
 
 PKG_LICENSE:=Apache-2.0

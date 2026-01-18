@@ -1,0 +1,50 @@
+name: Update Git Submodules
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 每周一 03:00 UTC
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: write
+
+jobs:
+  update-submodules:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Update submodules to latest remote
+        run: |
+          git submodule update --remote --recursive
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git status --porcelain | grep .; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit submodule updates
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git add .
+          git commit -m "chore: update git submodules"
+
+      - name: Push changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git push

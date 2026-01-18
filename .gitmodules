@@ -22,3 +22,12 @@
 [submodule "openwrt-passwall2"]
 	path = openwrt-passwall2
 	url = https://github.com/Openwrt-Passwall/openwrt-passwall2
+[submodule "luci-app-mosdns"]
+	path = luci-app-mosdns
+	url = https://github.com/sbwml/luci-app-mosdns
+[submodule "luci-app-lucky"]
+	path = luci-app-lucky
+	url = https://github.com/gdy666/luci-app-lucky
+[submodule "luci-app-easytier"]
+	path = luci-app-easytier
+	url = https://github.com/EasyTier/luci-app-easytier

@@ -7,3 +7,6 @@
 [submodule "luci-app-dnsproxy"]
 	path = luci-app-dnsproxy
 	url = https://github.com/muink/luci-app-dnsproxy
+[submodule "luci-app-bandix"]
+	path = luci-app-bandix
+	url = https://github.com/timsaya/luci-app-bandix

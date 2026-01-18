@@ -10,3 +10,15 @@
 [submodule "luci-app-bandix"]
 	path = luci-app-bandix
 	url = https://github.com/timsaya/luci-app-bandix
+[submodule "openwrt-bandix"]
+	path = openwrt-bandix
+	url = https://github.com/timsaya/openwrt-bandix
+[submodule "openwrt-passwall-packages"]
+	path = openwrt-passwall-packages
+	url = https://github.com/Openwrt-Passwall/openwrt-passwall-packages
+[submodule "openwrt-passwall"]
+	path = openwrt-passwall
+	url = https://github.com/Openwrt-Passwall/openwrt-passwall
+[submodule "openwrt-passwall2"]
+	path = openwrt-passwall2
+	url = https://github.com/Openwrt-Passwall/openwrt-passwall2

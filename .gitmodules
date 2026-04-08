@@ -34,9 +34,3 @@
 [submodule "curl"]
 	path = curl
 	url = https://github.com/sbwml/feeds_packages_net_curl
-[submodule "openwrt-smartdns"]
-	path = openwrt-smartdns
-	url = https://github.com/pymumu/openwrt-smartdns
-[submodule "luci-app-smartdns"]
-	path = luci-app-smartdns
-	url = https://github.com/pymumu/luci-app-smartdns

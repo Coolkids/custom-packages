@@ -16,6 +16,9 @@ PKG_HASH_AARCH64_GLIBC:=7b786145d7f7a05f8ac5f3b474b8293a70f3e871d59473c571e03442
 PKG_HASH_AARCH64_MUSL:=191224b8955d659d326fc85208a7974295f21b25df3b64f4d9de3a5a95e41548
 
 include $(INCLUDE_DIR)/package.mk
+include $(TOPDIR)/feeds/packages/lang/rust/rust-values.mk
+
+PKG_SOURCE:=oxidns-$(RUST_TARGET).tar.gz
 
 ifeq ($(ARCH),x86_64)
     ifeq ($(CONFIG_USE_GLIBC),y)
@@ -25,9 +28,7 @@ ifeq ($(ARCH),x86_64)
         PKG_SOURCE:=oxidns-x86_64-unknown-linux-musl.tar.gz
 		PKG_HASH:=$(PKG_HASH_X86_64_MUSL)
     endif
-endif
-
-ifeq ($(ARCH),aarch64)
+else ifeq ($(ARCH),aarch64)
     ifeq ($(CONFIG_USE_GLIBC),y)
         PKG_SOURCE:=oxidns-aarch64-unknown-linux-gnu.tar.gz
 		PKG_HASH:=$(PKG_HASH_AARCH64_GLIBC)
@@ -35,6 +36,8 @@ ifeq ($(ARCH),aarch64)
         PKG_SOURCE:=oxidns-aarch64-unknown-linux-musl.tar.gz
 		PKG_HASH:=$(PKG_HASH_AARCH64_MUSL)
     endif
+else
+	PKG_HASH:=dummy
 endif
 
 define Package/oxidns

@@ -79,10 +79,6 @@ define Package/oxidns/install
 	cp -a \
 		$(PKG_BUILD_DIR)/webui \
 		$(1)/etc/oxidns/
-
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/oxidns.init \
-		$(1)/etc/init.d/oxidns
 endef
 
 $(eval $(call BuildPackage,oxidns))

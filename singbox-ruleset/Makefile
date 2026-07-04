@@ -33,8 +33,8 @@ endef
 define Package/singbox-ruleset/install
 	$(INSTALL_DIR) $(1)/usr/share/singbox
 
-	$(CP) $(PKG_BUILD_DIR)/output/geoip/*.srs $(1)/usr/share/singbox/; \
-	$(CP) $(PKG_BUILD_DIR)/output/geosite/*.srs $(1)/usr/share/singbox/; \
+	$(CP) $(PKG_BUILD_DIR)/output/geoip/*.srs $(1)/usr/share/singbox/
+	$(CP) $(PKG_BUILD_DIR)/output/geosite/*.srs $(1)/usr/share/singbox/
 endef
 
 $(eval $(call BuildPackage,singbox-ruleset))

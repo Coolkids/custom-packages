@@ -1,0 +1,65 @@
+name: Update Packages
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: "0 16 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: package-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Setup GitHub CLI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh auth status
+        
+      - name: Update OxiDNS
+        run: |
+          bash .github/scripts/update_oxidns.sh
+
+      - name: Update Doggo
+        run: |
+          bash .github/scripts/update_doggo.sh
+
+      - name: Update Submodules
+        run: |
+          bash .github/scripts/update_submodules.sh
+
+      - name: Commit & Push
+        run: |
+          if git diff --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+
+          git add .
+
+          git commit -m "chore: auto update packages"
+
+          git push

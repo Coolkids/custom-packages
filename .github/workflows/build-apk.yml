@@ -9,25 +9,6 @@ on:
         type: string
         default: ""
 
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/build-apk.yml"
-      - ".gitmodules"
-      - "luci-app-*/**"
-      - "luci-theme-*/**"
-      - "openwrt-*/**"
-      - "curl/**"
-      - "doggo/**"
-      - "oxidns/**"
-      - "singbox-ruleset/**"
-
-  schedule:
-    # Every day at 00:30 UTC
-    # 08:30 Asia/Shanghai
-    - cron: "30 0 * * *"
-
 concurrency:
   group: build-openwrt-snapshot-apk
   cancel-in-progress: false

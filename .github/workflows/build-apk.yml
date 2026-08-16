@@ -1,0 +1,188 @@
+name: Build OpenWrt Snapshot APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: "Packages to build (empty = all packages)"
+        required: false
+        type: string
+        default: ""
+
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/build-apk.yml"
+      - ".gitmodules"
+      - "luci-app-*/**"
+      - "luci-theme-*/**"
+      - "openwrt-*/**"
+      - "curl/**"
+      - "doggo/**"
+      - "oxidns/**"
+      - "singbox-ruleset/**"
+
+  schedule:
+    # Every day at 00:30 UTC
+    # 08:30 Asia/Shanghai
+    - cron: "30 0 * * *"
+
+concurrency:
+  group: build-openwrt-snapshot-apk
+  cancel-in-progress: false
+
+env:
+  ARCH: x86_64
+  FEEDNAME: custom_packages
+
+jobs:
+  build:
+    name: Build x86_64 Snapshot APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Show repository status
+        run: |
+          echo "===== Git ====="
+          git --version
+          git status --short
+
+          echo
+          echo "===== Submodules ====="
+          git submodule status --recursive
+
+      - name: Build OpenWrt Snapshot packages
+        uses: openwrt/gh-action-sdk@main
+        env:
+          # IMPORTANT:
+          # OpenWrt gh-action-sdk uses the uppercase SNAPSHOT suffix.
+          # The corresponding SDK container is:
+          # ghcr.io/openwrt/sdk:x86_64-SNAPSHOT
+          ARCH: x86_64-SNAPSHOT
+
+          # Name of the custom feed.
+          FEEDNAME: custom_packages
+
+          # Empty = build every package in this repository.
+          PACKAGES: ${{ inputs.packages }}
+
+          # Generate packages.adb.
+          INDEX: 1
+
+          # Skip patch refresh checks.
+          # This is useful for a personal feed because snapshot changes
+          # frequently and we only care about successful package builds.
+          NO_REFRESH_CHECK: 1
+
+          # Keep normal OpenWrt feeds enabled.
+          #
+          # DO NOT set:
+          #   NO_DEFAULT_FEEDS: false
+          #
+          # The action checks whether the variable is empty. A literal
+          # "false" is still non-empty and would disable default feeds.
+
+          # Optional:
+          # PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+
+      - name: Show build output
+        shell: bash
+        run: |
+          echo "===== Package output ====="
+
+          if [[ ! -d "bin/packages/${ARCH}" ]]; then
+            echo "::error::OpenWrt package directory was not generated."
+            exit 1
+          fi
+
+          find "bin/packages/${ARCH}" \
+            -type f \
+            \( \
+              -name "*.apk" \
+              -o -name "packages.adb" \
+              -o -name "index.json" \
+            \) \
+            -print | sort
+
+      - name: Verify APK feed
+        shell: bash
+        run: |
+          PACKAGE_DIR="bin/packages/${ARCH}/${FEEDNAME}"
+
+          echo "Package directory:"
+          echo "$PACKAGE_DIR"
+
+          if [[ ! -d "$PACKAGE_DIR" ]]; then
+            echo "::error::Package feed directory does not exist:"
+            echo "$PACKAGE_DIR"
+            echo
+            echo "Available directories:"
+            find "bin/packages/${ARCH}" -maxdepth 2 -type d -print | sort
+            exit 1
+          fi
+
+          echo
+          echo "===== APK packages ====="
+
+          find "$PACKAGE_DIR" \
+            -maxdepth 1 \
+            -type f \
+            -name "*.apk" \
+            -print | sort
+
+          APK_COUNT="$(find "$PACKAGE_DIR" \
+            -maxdepth 1 \
+            -type f \
+            -name "*.apk" \
+            | wc -l)"
+
+          echo
+          echo "APK count: $APK_COUNT"
+
+          if [[ "$APK_COUNT" -eq 0 ]]; then
+            echo "::error::No APK packages were generated."
+            exit 1
+          fi
+
+          if [[ ! -f "$PACKAGE_DIR/packages.adb" ]]; then
+            echo "::error::packages.adb was not generated."
+            exit 1
+          fi
+
+          echo
+          echo "packages.adb:"
+          ls -lh "$PACKAGE_DIR/packages.adb"
+
+          if [[ -f "$PACKAGE_DIR/index.json" ]]; then
+            echo
+            echo "index.json:"
+            ls -lh "$PACKAGE_DIR/index.json"
+          fi
+
+      - name: Upload APK feed
+        uses: actions/upload-artifact@v7
+        with:
+          name: openwrt-snapshot-x86_64-apk
+          path: |
+            bin/packages/x86_64/custom_packages/*.apk
+            bin/packages/x86_64/custom_packages/packages.adb
+            bin/packages/x86_64/custom_packages/index.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: openwrt-snapshot-x86_64-build-logs
+          path: |
+            logs/**
+          if-no-files-found: ignore
+          retention-days: 7

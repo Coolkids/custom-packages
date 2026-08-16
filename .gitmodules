@@ -31,3 +31,9 @@
 [submodule "luci-app-oxidns"]
 	path = luci-app-oxidns
 	url = https://github.com/svenshi/luci-app-oxidns
+[submodule "luci-app-bandix"]
+	path = luci-app-bandix
+	url = https://github.com/Coolkids/luci-app-bandix
+[submodule "openwrt-bandix"]
+	path = openwrt-bandix
+	url = https://github.com/Coolkids/openwrt-bandix

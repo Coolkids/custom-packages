@@ -9,6 +9,15 @@ on:
         type: string
         default: ""
 
+      release:
+        description: "Create GitHub Release"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
 concurrency:
   group: build-openwrt-snapshot-apk
   cancel-in-progress: false
@@ -42,35 +51,23 @@ jobs:
       - name: Build OpenWrt Snapshot packages
         uses: openwrt/gh-action-sdk@main
         env:
-          # IMPORTANT:
-          # OpenWrt gh-action-sdk uses the uppercase SNAPSHOT suffix.
-          # The corresponding SDK container is:
-          # ghcr.io/openwrt/sdk:x86_64-SNAPSHOT
+          # OpenWrt Snapshot SDK
           ARCH: x86_64-SNAPSHOT
 
-          # Name of the custom feed.
+          # Custom feed name
           FEEDNAME: custom_packages
 
-          # Empty = build every package in this repository.
+          # Empty = build all packages
           PACKAGES: ${{ inputs.packages }}
 
-          # Generate packages.adb.
+          # Generate packages.adb
           INDEX: 1
 
-          # Skip patch refresh checks.
-          # This is useful for a personal feed because snapshot changes
-          # frequently and we only care about successful package builds.
+          # Skip package refresh checks
           NO_REFRESH_CHECK: 1
 
-          # Keep normal OpenWrt feeds enabled.
+          # Optional APK repository signing key
           #
-          # DO NOT set:
-          #   NO_DEFAULT_FEEDS: false
-          #
-          # The action checks whether the variable is empty. A literal
-          # "false" is still non-empty and would disable default feeds.
-
-          # Optional:
           # PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
 
       - name: Show build output
@@ -103,9 +100,14 @@ jobs:
           if [[ ! -d "$PACKAGE_DIR" ]]; then
             echo "::error::Package feed directory does not exist:"
             echo "$PACKAGE_DIR"
+
             echo
             echo "Available directories:"
-            find "bin/packages/${ARCH}" -maxdepth 2 -type d -print | sort
+            find "bin/packages/${ARCH}" \
+              -maxdepth 2 \
+              -type d \
+              -print | sort
+
             exit 1
           fi
 
@@ -147,6 +149,24 @@ jobs:
             ls -lh "$PACKAGE_DIR/index.json"
           fi
 
+      - name: Prepare release assets
+        if: ${{ inputs.release }}
+        shell: bash
+        run: |
+          PACKAGE_DIR="bin/packages/${ARCH}/${FEEDNAME}"
+
+          mkdir -p release
+
+          cp "$PACKAGE_DIR"/*.apk release/
+          cp "$PACKAGE_DIR/packages.adb" release/
+
+          if [[ -f "$PACKAGE_DIR/index.json" ]]; then
+            cp "$PACKAGE_DIR/index.json" release/
+          fi
+
+          echo "===== Release assets ====="
+          ls -lh release/
+
       - name: Upload APK feed
         uses: actions/upload-artifact@v7
         with:
@@ -158,12 +178,67 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Upload build logs
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: openwrt-snapshot-x86_64-build-logs
-          path: |
-            logs/**
-          if-no-files-found: ignore
-          retention-days: 7
+      - name: Generate release information
+        if: ${{ inputs.release }}
+        id: release_info
+        shell: bash
+        run: |
+          DATE="$(date -u +'%Y%m%d')"
+          TAG="snapshot-${DATE}"
+
+          echo "date=${DATE}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+          cat > release/README.txt <<EOF
+          OpenWrt Snapshot APK packages
+
+          Architecture: x86_64
+          Feed: ${FEEDNAME}
+          Build date (UTC): $(date -u '+%Y-%m-%d %H:%M:%S')
+          Commit: ${GITHUB_SHA}
+
+          This release was built from the OpenWrt Snapshot SDK.
+
+          APK packages:
+          - *.apk
+
+          Repository metadata:
+          - packages.adb
+          - index.json
+          EOF
+
+      - name: Create GitHub Release
+        if: ${{ inputs.release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release_info.outputs.tag }}
+          RELEASE_DATE: ${{ steps.release_info.outputs.date }}
+        shell: bash
+        run: |
+          echo "Creating/updating release:"
+          echo "$RELEASE_TAG"
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release already exists, uploading assets..."
+
+            gh release upload \
+              "$RELEASE_TAG" \
+              release/* \
+              --clobber
+          else
+            echo "Creating new release..."
+
+            gh release create \
+              "$RELEASE_TAG" \
+              release/* \
+              --title "OpenWrt Snapshot APK - ${RELEASE_DATE}" \
+              --notes "OpenWrt Snapshot x86_64 APK packages.
+
+          Build date: ${RELEASE_DATE} UTC
+          Architecture: x86_64
+          Feed: ${FEEDNAME}
+
+          Built automatically from:
+          ${GITHUB_REPOSITORY}@${GITHUB_SHA}"
+
+          fi

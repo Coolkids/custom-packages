@@ -68,7 +68,7 @@ jobs:
 
           # Optional APK repository signing key
           #
-          # PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PRIVATE_KEY: ${{ secrets.COOLKIDWRT_PRIVATE }}
 
       - name: Show build output
         shell: bash

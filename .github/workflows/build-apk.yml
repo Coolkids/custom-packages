@@ -55,7 +55,8 @@ jobs:
           git submodule status --recursive
 
       - name: Build OpenWrt Snapshot packages
-        uses: openwrt/gh-action-sdk@main
+        #uses: openwrt/gh-action-sdk@main
+        uses: sbwml/openwrt-gh-action-sdk@go1.26
         env:
           # OpenWrt Snapshot SDK
           ARCH: x86_64-SNAPSHOT

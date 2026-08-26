@@ -17,6 +17,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: build-openwrt-snapshot-apk
@@ -30,6 +32,10 @@ jobs:
   build:
     name: Build x86_64 Snapshot APK
     runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout repository
@@ -66,8 +72,7 @@ jobs:
           # Skip package refresh checks
           NO_REFRESH_CHECK: 1
 
-          # Optional APK repository signing key
-          #
+          # APK repository signing key
           PRIVATE_KEY: ${{ secrets.COOLKIDWRT_PRIVATE }}
 
       - name: Show build output
@@ -149,6 +154,150 @@ jobs:
             ls -lh "$PACKAGE_DIR/index.json"
           fi
 
+      # ==========================================================
+      # GitHub Pages
+      # ==========================================================
+
+      - name: Prepare GitHub Pages site
+        shell: bash
+        run: |
+          PACKAGE_DIR="bin/packages/${ARCH}/${FEEDNAME}"
+
+          rm -rf _site
+
+          mkdir -p \
+            "_site/packages/${ARCH}" \
+            "_site/keys"
+
+          echo "===== Copy APK packages ====="
+
+          cp "$PACKAGE_DIR"/*.apk \
+            "_site/packages/${ARCH}/"
+
+          cp "$PACKAGE_DIR/packages.adb" \
+            "_site/packages/${ARCH}/"
+
+          if [[ -f "$PACKAGE_DIR/index.json" ]]; then
+            cp "$PACKAGE_DIR/index.json" \
+              "_site/packages/${ARCH}/"
+          fi
+
+          # ------------------------------------------------------
+          # Public signing key
+          #
+          # IMPORTANT:
+          # COOLKIDWRT_PRIVATE is the private key.
+          # The public key must be committed to:
+          #
+          # keys/coolkidwrt-snapshots.pem
+          # ------------------------------------------------------
+
+          if [[ ! -f "keys/coolkidwrt-snapshots.pem" ]]; then
+            echo "::error::Public signing key not found:"
+            echo "keys/coolkidwrt-snapshots.pem"
+            exit 1
+          fi
+
+          cp keys/coolkidwrt-snapshots.pem \
+            "_site/keys/coolkidwrt-snapshots.pem"
+
+          # ------------------------------------------------------
+          # Repository index page
+          # ------------------------------------------------------
+
+          cat > "_site/index.html" <<EOF
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Coolkids OpenWrt APK Repository</title>
+          </head>
+          <body>
+            <h1>Coolkids OpenWrt APK Repository</h1>
+
+            <h2>OpenWrt Snapshot</h2>
+
+            <ul>
+              <li>
+                <a href="packages/${ARCH}/packages.adb">
+                  x86_64 APK Repository
+                </a>
+              </li>
+              <li>
+                <a href="packages/${ARCH}/">
+                  x86_64 Packages
+                </a>
+              </li>
+              <li>
+                <a href="keys/coolkidwrt-snapshots.pem">
+                  Repository Public Key
+                </a>
+              </li>
+            </ul>
+
+            <hr>
+
+            <p>
+              Architecture: ${ARCH}
+            </p>
+
+            <p>
+              Feed: ${FEEDNAME}
+            </p>
+
+            <p>
+              Build:
+              ${GITHUB_SHA}
+            </p>
+
+            <p>
+              Build time:
+              $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+            </p>
+          </body>
+          </html>
+          EOF
+
+          echo
+          echo "===== GitHub Pages site ====="
+
+          find _site \
+            -maxdepth 4 \
+            -type f \
+            -print | sort
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      # ==========================================================
+      # GitHub Actions Artifact
+      # ==========================================================
+
+      - name: Upload APK feed
+        uses: actions/upload-artifact@v7
+        with:
+          name: openwrt-snapshot-x86_64-apk
+          path: |
+            bin/packages/x86_64/custom_packages/*.apk
+            bin/packages/x86_64/custom_packages/packages.adb
+            bin/packages/x86_64/custom_packages/index.json
+          if-no-files-found: error
+          retention-days: 30
+
+      # ==========================================================
+      # GitHub Release
+      # ==========================================================
+
       - name: Prepare release assets
         if: ${{ inputs.release }}
         shell: bash
@@ -166,17 +315,6 @@ jobs:
 
           echo "===== Release assets ====="
           ls -lh release/
-
-      - name: Upload APK feed
-        uses: actions/upload-artifact@v7
-        with:
-          name: openwrt-snapshot-x86_64-apk
-          path: |
-            bin/packages/x86_64/custom_packages/*.apk
-            bin/packages/x86_64/custom_packages/packages.adb
-            bin/packages/x86_64/custom_packages/index.json
-          if-no-files-found: error
-          retention-days: 30
 
       - name: Generate release information
         if: ${{ inputs.release }}
@@ -240,5 +378,4 @@ jobs:
 
           Built automatically from:
           ${GITHUB_REPOSITORY}@${GITHUB_SHA}"
-
           fi

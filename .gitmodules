@@ -36,4 +36,4 @@
 	url = https://github.com/Coolkids/openwrt-bandix
 [submodule "openwrt-passwall-packages"]
 	path = openwrt-passwall-packages
-	url = https://github.com/Coolkids/openwrt-passwall-packages
+	url = https://github.com/Openwrt-Passwall/openwrt-passwall-packages

@@ -6,11 +6,7 @@
 
 const callStats = rpc.declare({
   object: "unbound-monitor",
-  method: "stats",
-  expect: {
-    success: false,
-    stats: {},
-  },
+  method: "stats"
 });
 
 let previousStats = null;
@@ -23,7 +19,7 @@ let histogramBars = [];
 
 const MAX_HISTORY = 60;
 
-const POLL_INTERVAL = 2;
+const POLL_INTERVAL = 5;
 
 /*
  * 数字转换
@@ -720,7 +716,7 @@ return view.extend({
 	E('link', {
 		'rel': 'stylesheet',
 		'href': L.resource(
-			'unbound-monitor/dashboard.css'
+			'view/unbound-monitor/dashboard.css'
 		)
 	});
 

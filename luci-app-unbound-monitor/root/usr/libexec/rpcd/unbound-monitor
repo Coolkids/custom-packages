@@ -1,0 +1,140 @@
+#!/bin/sh
+
+. /usr/share/libubox/jshn.sh
+
+
+UNBOUND_CONTROL="/usr/sbin/unbound-control"
+
+
+get_stats() {
+	local tmpfile
+	local key
+	local value
+
+
+	if [ ! -x "$UNBOUND_CONTROL" ]; then
+
+		json_init
+
+		json_add_boolean "success" 0
+
+		json_add_string \
+			"error" \
+			"unbound-control not found"
+
+		json_dump
+
+		return
+
+	fi
+
+
+	tmpfile="$(mktemp /tmp/unbound-monitor.XXXXXX)" || {
+
+		json_init
+
+		json_add_boolean "success" 0
+
+		json_add_string \
+			"error" \
+			"failed to create temporary file"
+
+		json_dump
+
+		return
+
+	}
+
+
+	if ! "$UNBOUND_CONTROL" \
+		stats_noreset \
+		>"$tmpfile" \
+		2>/dev/null; then
+
+		rm -f "$tmpfile"
+
+		json_init
+
+		json_add_boolean "success" 0
+
+		json_add_string \
+			"error" \
+			"failed to query unbound statistics"
+
+		json_dump
+
+		return
+
+	fi
+
+
+	json_init
+
+	json_add_boolean \
+		"success" \
+		1
+
+
+	json_add_object \
+		"stats"
+
+
+	while IFS='=' read -r key value; do
+
+		[ -z "$key" ] && continue
+
+		[ -z "$value" ] && value="0"
+
+
+		# 所有值作为字符串输出
+		# 避免 shell / awk 对科学计数法、
+		# 浮点数的兼容问题
+
+		json_add_string \
+			"$key" \
+			"$value"
+
+	done < "$tmpfile"
+
+
+	json_close_object
+
+
+	rm -f "$tmpfile"
+
+
+	json_dump
+}
+
+
+case "$1" in
+
+	list)
+
+		cat <<'EOF'
+{
+	"stats": {}
+}
+EOF
+
+		;;
+
+
+	call)
+
+		case "$2" in
+
+			stats)
+
+				# rpcd 参数通过 stdin
+				read -r input
+
+				get_stats
+
+				;;
+
+		esac
+
+		;;
+
+esac

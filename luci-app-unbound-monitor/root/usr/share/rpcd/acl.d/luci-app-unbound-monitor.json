@@ -1,0 +1,13 @@
+{
+    "luci-app-unbound-monitor": {
+        "description": "Grant access to Unbound Monitor",
+
+        "read": {
+            "ubus": {
+                "unbound-monitor": [
+                    "stats"
+                ]
+            }
+        }
+    }
+}

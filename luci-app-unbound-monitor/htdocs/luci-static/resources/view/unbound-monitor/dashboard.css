@@ -41,8 +41,8 @@
 }
 
 .unbound-chart {
-	width: 100%;
 	display: block;
+  max-width: none;
 }
 
 .unbound-histogram-container {
@@ -94,4 +94,40 @@
 	font-family:
 		monospace;
 	font-size: 12px;
+}
+
+.unbound-histogram-wrapper {
+	width: 100%;
+	max-width: 100%;
+}
+
+.unbound-histogram-scroll {
+	width: 100%;
+	max-width: 100%;
+	overflow-x: auto;
+	overflow-y: hidden;
+
+	/* 手机端惯性滚动 */
+	-webkit-overflow-scrolling: touch;
+
+	/* 始终允许横向滚动 */
+	touch-action: pan-x;
+}
+
+.unbound-histogram-container {
+	position: relative;
+
+	/* 宽度由 Canvas 控制 */
+	width: max-content;
+
+	min-width: 100%;
+}
+
+.unbound-histogram-container canvas {
+	display: block;
+
+	/*
+	 * 禁止 Canvas 自动缩放
+	 */
+	max-width: none !important;
 }

@@ -19,7 +19,7 @@ let histogramBars = [];
 
 const MAX_HISTORY = 60;
 
-const POLL_INTERVAL = 5;
+const POLL_INTERVAL = 2;
 
 /*
  * 数字转换
@@ -183,30 +183,66 @@ function parseHistogram(stats) {
  * Canvas DPI
  */
 
-function prepareCanvas(canvas, height) {
-  const rect = canvas.getBoundingClientRect();
+function prepareCanvas(canvas, height, minWidth) {
 
-  const dpr = window.devicePixelRatio || 1;
+	const rect =
+		canvas.getBoundingClientRect();
 
-  const width = Math.max(rect.width, 300);
+	const dpr =
+		window.devicePixelRatio || 1;
 
-  canvas.width = Math.floor(width * dpr);
+	const container =
+		canvas.parentElement;
 
-  canvas.height = Math.floor(height * dpr);
+	const containerWidth =
+		container
+			? container.clientWidth
+			: rect.width;
 
-  canvas.style.height = height + "px";
+	const width =
+		Math.max(
+			containerWidth,
+			minWidth || 300
+		);
 
-  const ctx = canvas.getContext("2d");
+	canvas.style.width =
+		width + 'px';
 
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+	canvas.style.height =
+		height + 'px';
 
-  ctx.clearRect(0, 0, width, height);
+	canvas.width =
+		Math.floor(width * dpr);
 
-  return {
-    ctx: ctx,
-    width: width,
-    height: height,
-  };
+	canvas.height =
+		Math.floor(height * dpr);
+
+	const ctx =
+		canvas.getContext('2d');
+
+	ctx.setTransform(
+		dpr,
+		0,
+		0,
+		dpr,
+		0,
+		0
+	);
+
+	ctx.clearRect(
+		0,
+		0,
+		width,
+		height
+	);
+
+	return {
+		ctx: ctx,
+		width: width,
+		height: height,
+		dpr: dpr
+	};
+
 }
 
 /*
@@ -218,7 +254,7 @@ function drawQpsChart() {
 
   if (!canvas) return;
 
-  const chart = prepareCanvas(canvas, 300);
+  const chart = prepareCanvas(canvas, 300, Math.max(canvas.getBoundingClientRect().width, 300));
 
   const ctx = chart.ctx;
 
@@ -308,7 +344,18 @@ function drawHistogram(histogram) {
 
   if (!canvas) return;
 
-  const chart = prepareCanvas(canvas, 560);
+  const minWidth =
+  	Math.max(
+  		900,
+  		histogram.length * 20
+  	);
+  
+  const chart =
+  	prepareCanvas(
+  		canvas,
+  		560,
+  		minWidth
+  	);
 
   const ctx = chart.ctx;
 
@@ -478,70 +525,328 @@ function drawHistogram(histogram) {
  */
 
 function setupHistogramTooltip() {
-  const canvas = document.getElementById("unbound-histogram-chart");
 
-  const tooltip = document.getElementById("unbound-histogram-tooltip");
+	const canvas =
+		document.getElementById(
+			'unbound-histogram-chart'
+		);
 
-  if (!canvas || !tooltip) return;
+	const tooltip =
+		document.getElementById(
+			'unbound-histogram-tooltip'
+		);
 
-  canvas.addEventListener("mousemove", function (event) {
-    const rect = canvas.getBoundingClientRect();
+	if (!canvas || !tooltip)
+		return;
 
-    const x = event.clientX - rect.left;
 
-    let target = null;
+	/*
+	 * 获取鼠标 / 触摸位置
+	 */
 
-    histogramBars.forEach(function (bar) {
-      if (x >= bar.left && x <= bar.right) {
-        target = bar;
-      }
-    });
+	function getCanvasPosition(event) {
 
-    if (!target) {
-      tooltip.style.display = "none";
+		const rect =
+			canvas.getBoundingClientRect();
 
-      canvas.style.cursor = "default";
+		let clientX;
+		let clientY;
 
-      return;
-    }
 
-    const item = target.item;
+		if (
+			event.touches &&
+			event.touches.length
+		) {
 
-    const percentage = percent(item.count, target.total);
+			clientX =
+				event.touches[0].clientX;
 
-    tooltip.innerHTML =
-      "<strong>" +
-      formatHistogramLabel(item.start, item.end) +
-      "</strong>" +
-      "<br>" +
-      "Count: " +
-      formatNumber(item.count) +
-      "<br>" +
-      "Percentage: " +
-      formatPercent(percentage);
+			clientY =
+				event.touches[0].clientY;
 
-    let left = event.clientX - rect.left + 15;
+		}
+		else if (
+			event.changedTouches &&
+			event.changedTouches.length
+		) {
 
-    let top = event.clientY - rect.top + 15;
+			clientX =
+				event.changedTouches[0].clientX;
 
-    if (left + 180 > rect.width) {
-      left -= 200;
-    }
+			clientY =
+				event.changedTouches[0].clientY;
 
-    tooltip.style.left = left + "px";
+		}
+		else {
 
-    tooltip.style.top = top + "px";
+			clientX =
+				event.clientX;
 
-    tooltip.style.display = "block";
+			clientY =
+				event.clientY;
 
-    canvas.style.cursor = "pointer";
-  });
+		}
 
-  canvas.addEventListener("mouseleave", function () {
-    tooltip.style.display = "none";
 
-    canvas.style.cursor = "default";
-  });
+		/*
+		 * CSS 像素转换为 Canvas 逻辑坐标
+		 */
+
+		const scaleX =
+			canvas.width
+			/ rect.width;
+
+
+		const scaleY =
+			canvas.height
+			/ rect.height;
+
+
+		return {
+
+			x:
+				(clientX - rect.left)
+				* scaleX
+				/ (
+					window.devicePixelRatio || 1
+				),
+
+			y:
+				(clientY - rect.top)
+				* scaleY
+				/ (
+					window.devicePixelRatio || 1
+				),
+
+			clientX:
+				clientX,
+
+			clientY:
+				clientY,
+
+			rect:
+				rect
+
+		};
+
+	}
+
+
+	function showTooltip(event) {
+
+		if (!histogramBars.length)
+			return;
+
+
+		const position =
+			getCanvasPosition(event);
+
+
+		let target = null;
+
+
+		histogramBars.forEach(
+			function(bar) {
+
+				if (
+					position.x >= bar.left &&
+					position.x <= bar.right
+				) {
+
+					target = bar;
+
+				}
+
+			}
+		);
+
+
+		if (!target) {
+
+			tooltip.style.display =
+				'none';
+
+			return;
+
+		}
+
+
+		const item =
+			target.item;
+
+
+		const percentage =
+			percent(
+				item.count,
+				target.total
+			);
+
+
+		tooltip.innerHTML =
+			'<strong>'
+			+ formatHistogramLabel(
+				item.start,
+				item.end
+			)
+			+ '</strong>'
+			+ '<br>'
+			+ 'Count: '
+			+ formatNumber(
+				item.count
+			)
+			+ '<br>'
+			+ 'Percentage: '
+			+ formatPercent(
+				percentage
+			);
+
+
+		/*
+		 * Tooltip 使用相对于
+		 * histogram-container 的坐标
+		 */
+
+		const container =
+			canvas.parentElement;
+
+
+		const containerRect =
+			container.getBoundingClientRect();
+
+
+		let left =
+			position.clientX
+			- containerRect.left
+			+ 15;
+
+
+		let top =
+			position.clientY
+			- containerRect.top
+			+ 15;
+
+
+		const tooltipWidth =
+			190;
+
+
+		/*
+		 * 防止 Tooltip 超出右侧
+		 */
+
+		if (
+			left + tooltipWidth
+			> containerRect.width
+		) {
+
+			left =
+				position.clientX
+				- containerRect.left
+				- tooltipWidth
+				- 15;
+
+		}
+
+
+		if (left < 5)
+			left = 5;
+
+
+		if (top < 5)
+			top = 5;
+
+
+		tooltip.style.left =
+			left + 'px';
+
+
+		tooltip.style.top =
+			top + 'px';
+
+
+		tooltip.style.display =
+			'block';
+
+	}
+
+
+	function hideTooltip() {
+
+		tooltip.style.display =
+			'none';
+
+	}
+
+
+	/*
+	 * Desktop
+	 */
+
+	canvas.addEventListener(
+		'mousemove',
+		showTooltip
+	);
+
+
+	canvas.addEventListener(
+		'mouseleave',
+		hideTooltip
+	);
+
+
+	/*
+	 * Mobile
+	 *
+	 * passive: false 是为了
+	 * 必要时允许阻止默认行为
+	 */
+
+	canvas.addEventListener(
+		'touchstart',
+		function(event) {
+
+			showTooltip(event);
+
+		},
+		{
+			passive: true
+		}
+	);
+
+
+	canvas.addEventListener(
+		'touchmove',
+		function(event) {
+
+			showTooltip(event);
+
+		},
+		{
+			passive: true
+		}
+	);
+
+
+	canvas.addEventListener(
+		'touchend',
+		function() {
+
+			/*
+			 * 延迟隐藏，
+			 * 方便手机查看数据
+			 */
+
+			window.setTimeout(
+				hideTooltip,
+				1500
+			);
+
+		},
+		{
+			passive: true
+		}
+	);
+
 }
 
 /*
@@ -812,29 +1117,38 @@ return view.extend({
           "div",
           {
             class: "cbi-section",
+            style: "margin-top: 10px",
           },
           [
             E("h3", {}, [_("Response Time Histogram")]),
 
-            E(
-              "div",
-              {
-                class: "unbound-histogram-container",
-              },
-              [
-                E("canvas", {
-                  id: "unbound-histogram-chart",
-
-                  class: "unbound-chart",
-                }),
-
-                E("div", {
-                  id: "unbound-histogram-tooltip",
-
-                  class: "unbound-tooltip",
-                }),
-              ],
-            ),
+            E('div', {
+            	'class': 'unbound-histogram-wrapper'
+            }, [
+            
+            	E('div', {
+            		'class': 'unbound-histogram-scroll'
+            	}, [
+            
+            		E('div', {
+            			'class': 'unbound-histogram-container'
+            		}, [
+            
+            			E('canvas', {
+            				'id': 'unbound-histogram-chart',
+            				'class': 'unbound-chart'
+            			}),
+            
+            			E('div', {
+            				'id': 'unbound-histogram-tooltip',
+            				'class': 'unbound-tooltip'
+            			})
+            
+            		])
+            
+            	])
+            
+            ])
           ],
         ),
       ],

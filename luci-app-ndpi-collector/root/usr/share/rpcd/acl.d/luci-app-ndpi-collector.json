@@ -1,0 +1,10 @@
+{
+	"luci-app-ndpi-collector": {
+		"description": "Grant access to nDPI WAN traffic collection",
+		"read": {
+			"file": {
+				"/usr/libexec/ndpi-collector": [ "exec" ]
+			}
+		}
+	}
+}

@@ -1,0 +1,13 @@
+{
+	"admin/network/ndpi_collector": {
+		"title": "nDPI 流量分析",
+		"order": 91,
+		"action": {
+			"type": "view",
+			"path": "ndpi_collector/overview"
+		},
+		"depends": {
+			"acl": [ "luci-app-ndpi-collector" ]
+		}
+	}
+}

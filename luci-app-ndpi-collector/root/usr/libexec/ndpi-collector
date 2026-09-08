@@ -1,0 +1,219 @@
+#!/bin/sh
+
+# nDPI WAN collector backend. It is deliberately a short-lived command rather
+# than an init service: each collection is a separate, retained report.
+
+DATA_DIR="${NDPI_COLLECTOR_DATA_DIR:-/tmp/ndpi-collector}"
+STATE_FILE="$DATA_DIR/state"
+LOCK_DIR="$DATA_DIR/lock"
+READER="${NDPI_COLLECTOR_READER:-/usr/bin/ndpiReader}"
+MAX_DURATION=43200
+
+mkdir -p "$DATA_DIR" || exit 1
+
+value() {
+	# All keys are literals defined in this script, so no caller input reaches sed.
+	sed -n "s/^$1=//p" "$STATE_FILE" 2>/dev/null | head -n 1
+}
+
+write_state() {
+	state="$1"
+	id="$2"
+	duration="$3"
+	device="$4"
+	started="$5"
+	error="$6"
+	pid="$7"
+	{
+		printf 'state=%s\n' "$state"
+		printf 'id=%s\n' "$id"
+		printf 'duration=%s\n' "$duration"
+		printf 'device=%s\n' "$device"
+		printf 'started=%s\n' "$started"
+		printf 'error=%s\n' "$error"
+		printf 'pid=%s\n' "$pid"
+	} > "$STATE_FILE.tmp" && mv "$STATE_FILE.tmp" "$STATE_FILE"
+}
+
+valid_duration() {
+	case "$1" in
+		''|*[!0-9]*) return 1 ;;
+	esac
+	[ "$1" -ge 1 ] 2>/dev/null && [ "$1" -le "$MAX_DURATION" ]
+}
+
+valid_id() {
+	case "$1" in
+		''|*[!0-9]*) return 1 ;;
+	esac
+}
+
+wan_device() {
+	device="$(ubus call network.interface.wan status 2>/dev/null | jsonfilter -e '@.l3_device' 2>/dev/null)"
+	[ -n "$device" ] || device="$(ubus call network.interface.wan status 2>/dev/null | jsonfilter -e '@.device' 2>/dev/null)"
+	[ -n "$device" ] || device="$(uci -q get network.wan.device)"
+	case "$device" in
+		''|*[!A-Za-z0-9_.:-]*) return 1 ;;
+	esac
+	printf '%s\n' "$device"
+}
+
+show_status() {
+	state="$(value state)"
+	id="$(value id)"
+	duration="$(value duration)"
+	device="$(value device)"
+	started="$(value started)"
+	error="$(value error)"
+
+	[ -n "$state" ] || state="idle"
+	if [ "$state" = "collecting" ]; then
+		pid="$(value pid)"
+		if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+			state="failed"
+			error="采集进程意外结束"
+			write_state "$state" "$id" "$duration" "$device" "$started" "$error"
+			rmdir "$LOCK_DIR" 2>/dev/null
+		fi
+	fi
+
+	printf 'state=%s\n' "$state"
+	printf 'id=%s\n' "$id"
+	printf 'duration=%s\n' "$duration"
+	printf 'device=%s\n' "$device"
+	printf 'started=%s\n' "$started"
+	printf 'error=%s\n' "$error"
+}
+
+purge_old_reports() {
+	# IDs are epoch seconds. Sorting newest first keeps the ten latest reports.
+	find "$DATA_DIR" -mindepth 1 -maxdepth 1 -type d -name '[0-9]*' -print 2>/dev/null |
+		sort -rn | sed -n '11,$p' |
+		while IFS= read -r old; do
+			[ -n "$old" ] && rm -rf "$old"
+		done
+}
+
+make_report() {
+	raw="$1/raw.txt"
+	report="$1/report.txt"
+	{
+		printf 'nDPI WAN 流量采集报告\n'
+		printf '采集时间: %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+		printf '采集接口: %s\n' "$2"
+		printf '采集时长: %s 秒\n\n' "$3"
+		printf '%s\n' '以下为 ndpiReader 输出中的协议与流量汇总：'
+		awk '
+			/^Detected protocols:/ { in_summary = 1 }
+			in_summary { print }
+			/^Traffic statistics:/ && in_summary { exit }
+		' "$raw"
+	} > "$report"
+
+	# Keep the report useful for nDPI versions with a different summary heading.
+	if [ "$(wc -l < "$report")" -le 6 ]; then
+		{
+			printf 'nDPI WAN 流量采集报告\n'
+			printf '采集接口: %s\n采集时长: %s 秒\n\n' "$2" "$3"
+			printf '%s\n' '未识别标准汇总段，以下是原始输出：'
+			cat "$raw"
+		} > "$report"
+	fi
+}
+
+collect() {
+	id="$1"
+	duration="$2"
+	device="$3"
+	dir="$DATA_DIR/$id"
+	started="$(date +%s)"
+	mkdir -p "$dir" || exit 1
+
+	write_state collecting "$id" "$duration" "$device" "$started" '' "$$"
+	# Store epoch timestamps for the LuCI list. The text report keeps its own
+	# human-readable timestamp.
+	printf '%s\n' "$started" > "$dir/started"
+	printf '%s\n' "$duration" > "$dir/duration"
+	printf '%s\n' "$device" > "$dir/device"
+
+	# ndpiReader writes its detection summary on termination. SIGINT lets it
+	# finish that summary while timeout still enforces the requested duration.
+	timeout -s INT "$duration" "$READER" -i "$device" > "$dir/raw.txt" 2>&1
+	exit_code=$?
+	make_report "$dir" "$device" "$duration"
+	printf '%s\n' "$(date +%s)" > "$dir/finished"
+
+	case "$exit_code" in
+		0|124|130)
+			write_state complete "$id" "$duration" "$device" "$started" ''
+			;;
+		*)
+			error="$(tail -n 1 "$dir/raw.txt" 2>/dev/null | tr '\n' ' ')"
+			[ -n "$error" ] || error="ndpiReader 退出码: $exit_code"
+			write_state failed "$id" "$duration" "$device" "$started" "$error"
+			;;
+	esac
+	purge_old_reports
+	rmdir "$LOCK_DIR" 2>/dev/null || true
+}
+
+start() {
+	duration="$1"
+	if ! valid_duration "$duration"; then
+		echo '错误：采集时长必须为 1 到 43200 秒（12 小时）。' >&2
+		return 1
+	fi
+	if [ ! -x "$READER" ]; then
+		echo '错误：未找到 /usr/bin/ndpiReader；请安装带 ndpiReader 支持的 libndpi。' >&2
+		return 1
+	fi
+	if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+		echo '错误：已有采集任务正在运行。' >&2
+		return 1
+	fi
+	device="$(wan_device)"
+	if [ -z "$device" ]; then
+		rmdir "$LOCK_DIR"
+		echo '错误：无法确定 WAN 物理接口。' >&2
+		return 1
+	fi
+	id="$(date +%s)"
+	# Prevent a collision if two requests arrive within the same second.
+	while [ -e "$DATA_DIR/$id" ]; do id=$((id + 1)); done
+	"$0" collect "$id" "$duration" "$device" >/dev/null 2>&1 &
+	pid=$!
+	write_state collecting "$id" "$duration" "$device" "$(date +%s)" '' "$pid"
+	echo "已开始采集 WAN 接口 $device，持续 $duration 秒。"
+}
+
+list() {
+	for dir in "$DATA_DIR"/[0-9]*; do
+		[ -d "$dir" ] || continue
+		id="${dir##*/}"
+		started="$(cat "$dir/finished" 2>/dev/null)"
+		[ -n "$started" ] || started="$(cat "$dir/started" 2>/dev/null)"
+		duration="$(cat "$dir/duration" 2>/dev/null)"
+		device="$(cat "$dir/device" 2>/dev/null)"
+		# A report is created only after ndpiReader has stopped, so incomplete
+		# collections never appear in the saved-results table.
+		[ -f "$dir/report.txt" ] || continue
+		printf '%s\t%s\t%s\t%s\n' "$id" "$started" "$duration" "$device"
+	done | sort -rn
+}
+
+show_file() {
+	valid_id "$1" || { echo '无效的报告编号。' >&2; return 1; }
+	file="$DATA_DIR/$1/$2.txt"
+	[ -f "$file" ] || { echo '找不到该采集数据。' >&2; return 1; }
+	cat "$file"
+}
+
+case "$1" in
+	start) start "$2" ;;
+	collect) valid_id "$2" && valid_duration "$3" || exit 1; collect "$2" "$3" "$4" ;;
+	status) show_status ;;
+	list) list ;;
+	report) show_file "$2" report ;;
+	raw) show_file "$2" raw ;;
+	*) echo "用法: $0 {start <秒>|status|list|report <编号>|raw <编号>}" >&2; exit 1 ;;
+esac

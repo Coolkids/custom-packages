@@ -6,7 +6,7 @@ PKG_RELEASE:=1
 
 LUCI_TITLE:=LuCI Unbound Performance Monitor
 LUCI_PKGARCH:=all
-LUCI_DEPENDS:=+luci-base +rpcd +unbound-control
+LUCI_DEPENDS:=+luci-base +luci-lib-chartjs +rpcd +unbound-control
 
 PKG_MAINTAINER:=Coolkids(s196774065@gmail.com)
 

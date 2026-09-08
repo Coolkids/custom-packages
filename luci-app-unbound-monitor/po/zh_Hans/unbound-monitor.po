@@ -1,0 +1,154 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-unbound-monitor\n"
+"PO-Revision-Date: 2026-09-08 00:00+0800\n"
+"Last-Translator: luci-app-unbound-monitor contributors\n"
+"Language-Team: Chinese\n"
+"Language: zh_Hans\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Unbound Monitor"
+msgstr "Unbound 监控"
+
+msgid "Unbound Performance Monitor"
+msgstr "Unbound 性能监控"
+
+msgid "QPS"
+msgstr "QPS"
+
+msgid "Total Queries"
+msgstr "查询总数"
+
+msgid "Cache Hit Rate"
+msgstr "缓存命中率"
+
+msgid "Avg Recursion Time"
+msgstr "平均递归耗时"
+
+msgid "Bogus Answers"
+msgstr "伪造响应"
+
+msgid "Overview"
+msgstr "概览"
+
+msgid "Request List"
+msgstr "请求列表"
+
+msgid "Cache"
+msgstr "缓存"
+
+msgid "Cachedb"
+msgstr "Cachedb"
+
+msgid "Raw Stats"
+msgstr "原始统计"
+
+msgid "QPS Trend"
+msgstr "QPS 趋势"
+
+msgid "Response Time Histogram"
+msgstr "响应时间分布"
+
+msgid "Average"
+msgstr "平均值"
+
+msgid "Maximum"
+msgstr "最大值"
+
+msgid "Current All"
+msgstr "当前总数"
+
+msgid "Current User"
+msgstr "当前用户请求"
+
+msgid "Current Replies"
+msgstr "当前响应请求"
+
+msgid "Message Cache"
+msgstr "消息缓存"
+
+msgid "RRSet Cache"
+msgstr "RRSet 缓存"
+
+msgid "Infra Cache"
+msgstr "基础设施缓存"
+
+msgid "Key Cache"
+msgstr "密钥缓存"
+
+msgid "ECS Cache Hits"
+msgstr "ECS 缓存命中"
+
+msgid "Cachedb Queries"
+msgstr "Cachedb 查询数"
+
+msgid "Queries per second"
+msgstr "每秒查询数"
+
+msgid "Queries"
+msgstr "查询数"
+
+msgid "Count"
+msgstr "数量"
+
+msgid "Runtime"
+msgstr "运行时长"
+
+msgid "Cache Hits"
+msgstr "缓存命中次数"
+
+msgid "Cache Misses"
+msgstr "缓存未命中次数"
+
+msgid "Prefetch Queries"
+msgstr "预加载次数"
+
+msgid "Memory"
+msgstr "内存"
+
+msgid "Displayed Memory Total"
+msgstr "已显示内存总计"
+
+msgid "Message Cache Memory"
+msgstr "消息缓存内存"
+
+msgid "RRSet Cache Memory"
+msgstr "RRSet 缓存内存"
+
+msgid "DNSCrypt Shared Secret Cache"
+msgstr "DNSCrypt 共享密钥缓存"
+
+msgid "DNSCrypt Nonce Cache"
+msgstr "DNSCrypt 随机数缓存"
+
+msgid "Iterator Module"
+msgstr "迭代器模块"
+
+msgid "Validator Module"
+msgstr "验证器模块"
+
+msgid "Stream Wait Buffers"
+msgstr "流等待缓冲区"
+
+msgid "HTTP Query Buffers"
+msgstr "HTTP 查询缓冲区"
+
+msgid "HTTP Response Buffers"
+msgstr "HTTP 响应缓冲区"
+
+msgid "QUIC Memory"
+msgstr "QUIC 内存"
+
+msgid "Bogus"
+msgstr "Bogus 数据"
+
+msgid "Bogus RRsets"
+msgstr "Bogus RRSet 数"
+
+msgid "Secure Answers"
+msgstr "安全响应数"
+
+msgid "Validation Operations"
+msgstr "验证操作数"

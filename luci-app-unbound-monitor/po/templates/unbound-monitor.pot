@@ -1,0 +1,155 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-unbound-monitor\n"
+"POT-Creation-Date: 2026-09-08 00:00+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Unbound Monitor"
+msgstr ""
+
+msgid "Unbound Performance Monitor"
+msgstr ""
+
+msgid "QPS"
+msgstr ""
+
+msgid "Total Queries"
+msgstr ""
+
+msgid "Cache Hit Rate"
+msgstr ""
+
+msgid "Avg Recursion Time"
+msgstr ""
+
+msgid "Bogus Answers"
+msgstr ""
+
+msgid "Overview"
+msgstr ""
+
+msgid "Request List"
+msgstr ""
+
+msgid "Cache"
+msgstr ""
+
+msgid "Cachedb"
+msgstr ""
+
+msgid "Raw Stats"
+msgstr ""
+
+msgid "QPS Trend"
+msgstr ""
+
+msgid "Response Time Histogram"
+msgstr ""
+
+msgid "Average"
+msgstr ""
+
+msgid "Maximum"
+msgstr ""
+
+msgid "Current All"
+msgstr ""
+
+msgid "Current User"
+msgstr ""
+
+msgid "Current Replies"
+msgstr ""
+
+msgid "Message Cache"
+msgstr ""
+
+msgid "RRSet Cache"
+msgstr ""
+
+msgid "Infra Cache"
+msgstr ""
+
+msgid "Key Cache"
+msgstr ""
+
+msgid "ECS Cache Hits"
+msgstr ""
+
+msgid "Cachedb Queries"
+msgstr ""
+
+msgid "Queries per second"
+msgstr ""
+
+msgid "Queries"
+msgstr ""
+
+msgid "Count"
+msgstr ""
+
+msgid "Runtime"
+msgstr ""
+
+msgid "Cache Hits"
+msgstr ""
+
+msgid "Cache Misses"
+msgstr ""
+
+msgid "Prefetch Queries"
+msgstr ""
+
+msgid "Memory"
+msgstr ""
+
+msgid "Displayed Memory Total"
+msgstr ""
+
+msgid "Message Cache Memory"
+msgstr ""
+
+msgid "RRSet Cache Memory"
+msgstr ""
+
+msgid "DNSCrypt Shared Secret Cache"
+msgstr ""
+
+msgid "DNSCrypt Nonce Cache"
+msgstr ""
+
+msgid "Iterator Module"
+msgstr ""
+
+msgid "Validator Module"
+msgstr ""
+
+msgid "Stream Wait Buffers"
+msgstr ""
+
+msgid "HTTP Query Buffers"
+msgstr ""
+
+msgid "HTTP Response Buffers"
+msgstr ""
+
+msgid "QUIC Memory"
+msgstr ""
+
+msgid "Bogus"
+msgstr ""
+
+msgid "Bogus RRsets"
+msgstr ""
+
+msgid "Secure Answers"
+msgstr ""
+
+msgid "Validation Operations"
+msgstr ""

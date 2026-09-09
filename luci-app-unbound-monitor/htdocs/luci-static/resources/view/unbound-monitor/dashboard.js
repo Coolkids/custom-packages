@@ -188,13 +188,42 @@ function updateText(id, value) {
   if (element) element.textContent = value;
 }
 
-function createCard(title, id) {
+function createIcon(name) {
+  const paths = {
+    activity: "M3 12h4l3-8 4 16 3-8h4",
+    queries: "M4 5h16v5H4z M4 14h16v5H4z M7 7.5h.01 M7 16.5h.01",
+    cache: "M20 7l-8-4-8 4 8 4z M4 12l8 4 8-4 M4 17l8 4 8-4",
+    clock: "M12 8v4l3 2 M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0",
+    shield: "M12 3l8 3v6c0 5-8 9-8 9s-8-4-8-9V6z M12 8v5 M12 16h.01",
+    runtime: "M5 5a9 9 0 1 1-2 9 M5 2v5H1 M12 7v5l3 2",
+  };
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "1.7");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  svg.setAttribute("aria-hidden", "true");
+  path.setAttribute("d", paths[name] || paths.activity);
+  svg.appendChild(path);
+
+  return svg;
+}
+
+function createCard(title, id, icon, description) {
   return E(
     "div",
-    { class: "unbound-monitor-card" },
+    { class: "unbound-monitor-card unbound-card-" + icon },
     [
-      E("div", { class: "unbound-monitor-card-title" }, title),
+      E("div", { class: "unbound-card-heading" }, [
+        E("div", { class: "unbound-monitor-card-title" }, title),
+        E("span", { class: "unbound-card-icon" }, [createIcon(icon)]),
+      ]),
       E("div", { class: "unbound-monitor-card-value", id: id }, "-"),
+      E("div", { class: "unbound-card-description" }, description),
     ],
   );
 }
@@ -211,8 +240,13 @@ function createTabButton(title, target, active) {
   return E(
     "button",
     {
-      class: active ? "cbi-button cbi-button-action" : "cbi-button",
+      class: "unbound-tab-button",
       "data-target": target,
+      id: "unbound-nav-" + target,
+      role: "tab",
+      "aria-controls": "unbound-tab-" + target,
+      "aria-selected": active ? "true" : "false",
+      tabindex: active ? "0" : "-1",
       type: "button",
     },
     title,
@@ -245,7 +279,7 @@ function parseHistogram(stats) {
 }
 
 function cssColor(name, fallback) {
-  const element = document.body || document.documentElement;
+  const element = dashboardPage || document.body || document.documentElement;
   const value = getComputedStyle(element).getPropertyValue(name).trim();
 
   if (!value) return fallback;
@@ -294,17 +328,17 @@ function colorWithAlpha(color, alpha) {
 }
 
 function chartColors() {
-  const text = cssColor("--text-color-high", "#333");
-  const mutedText = cssColor("--text-color-medium", "#666");
-  const border = cssColor("--border-color-medium", "#d9d9d9");
-  const accent = cssColor("--primary-color-high", "#2563eb");
-  const tooltipBackground = cssColor("--background-color-high", "#1f2937");
+  const text = cssColor("--um-text", "#20334b");
+  const mutedText = cssColor("--um-muted", "#64748b");
+  const border = cssColor("--um-border", "#e3eaf0");
+  const accent = cssColor("--um-accent", "#0d9488");
+  const tooltipBackground = cssColor("--um-surface", "#fff");
 
   return {
     text: text,
     mutedText: mutedText,
     border: border,
-    grid: colorWithAlpha(text, 0.14),
+    grid: colorWithAlpha(text, 0.08),
     accent: accent,
     accentFill: colorWithAlpha(accent, 0.2),
     tooltipBackground: tooltipBackground,
@@ -373,7 +407,8 @@ function drawUnboundLineChart(chart, data) {
   if (!values.length) return;
 
   ctx.strokeStyle = colors.accent;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = "round";
   ctx.beginPath();
 
   values.forEach(function (value, index) {
@@ -386,6 +421,23 @@ function drawUnboundLineChart(chart, data) {
   });
 
   ctx.stroke();
+
+  const firstX = padding.left + (values.length === 1 ? area.width / 2 : 0);
+  const lastX = padding.left + (values.length === 1 ? area.width / 2 : area.width);
+  const gradient = ctx.createLinearGradient(0, padding.top, 0, area.baseline);
+
+  gradient.addColorStop(0, colorWithAlpha(colors.accent, 0.24));
+  gradient.addColorStop(1, colorWithAlpha(colors.accent, 0.01));
+  ctx.lineTo(lastX, area.baseline);
+  ctx.lineTo(firstX, area.baseline);
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(lastX, area.baseline - number(values[values.length - 1]) / maxValue * area.height, 4, 0, Math.PI * 2);
+  ctx.fillStyle = colors.accent;
+  ctx.fill();
 
   ctx.fillStyle = colors.mutedText;
   ctx.font = "11px sans-serif";
@@ -604,7 +656,9 @@ function drawQpsChart() {
   if (!chartsReady || !canvas || !canvas.parentElement) return;
 
   const colors = chartColors();
-  const width = Math.max(canvas.parentElement.clientWidth || 600, 300);
+  if (!canvas.offsetWidth) return;
+
+  const width = Math.max(canvas.parentElement.clientWidth || 600, 220);
 
   sizeCanvas(canvas, width, 300);
   destroyChart(qpsChart);
@@ -654,9 +708,11 @@ function drawQpsChart() {
 function drawHistogram(histogram) {
   const canvas = document.getElementById("unbound-histogram-chart");
 
+  currentHistogram = histogram;
+
   if (!chartsReady || !canvas || !canvas.parentElement) return;
 
-  currentHistogram = histogram;
+  if (!canvas.offsetWidth) return;
 
   const colors = chartColors();
   const containerWidth = canvas.parentElement.clientWidth || 900;
@@ -729,6 +785,8 @@ function updateDashboard(stats) {
   if (!stats) return;
 
   const now = Date.now();
+  updateConnectionStatus(true);
+  updateText("unbound-last-update", _("Last updated") + " " + formatTime(now));
   const queries = number(stats["total.num.queries"]);
   let qps = 0;
 
@@ -760,6 +818,11 @@ function updateDashboard(stats) {
   history.push({ time: now, qps: qps });
 
   if (history.length > MAX_HISTORY) history.shift();
+
+  updateText("unbound-qps-current", qps.toFixed(1));
+  updateText("unbound-qps-peak", Math.max.apply(null, history.map(function (item) {
+    return item.qps;
+  })).toFixed(1));
 
   updateText("requestlist-avg", number(stats["total.requestlist.avg"]).toFixed(2));
   updateText("requestlist-max", formatNumber(stats["total.requestlist.max"]));
@@ -809,6 +872,15 @@ function updateDashboard(stats) {
   drawHistogram(parseHistogram(stats));
 }
 
+function updateConnectionStatus(connected) {
+  if (!dashboardPage) return;
+
+  const status = dashboardPage.querySelector("#unbound-connection");
+
+  status.classList.toggle("unbound-status-error", !connected);
+  updateText("unbound-connection-label", connected ? _("Live monitoring") : _("Update unavailable"));
+}
+
 function setupTabs(tabs) {
   const tabNames = [
     "overview",
@@ -831,20 +903,37 @@ function setupTabs(tabs) {
       });
 
       tabs.querySelectorAll("button").forEach(function (item) {
-        item.classList.toggle("cbi-button-action", item === button);
+        item.setAttribute("aria-selected", item === button ? "true" : "false");
+        item.setAttribute("tabindex", item === button ? "0" : "-1");
       });
+
+      hideChartTooltip(dashboardPage.querySelector("#unbound-chart-tooltip"));
 
       if (target === "overview") {
         drawQpsChart();
         drawHistogram(currentHistogram);
       }
     });
+    button.addEventListener("keydown", function (event) {
+      const buttons = Array.from(tabs.querySelectorAll("button"));
+      let index = buttons.indexOf(button);
+
+      if (event.key === "ArrowRight") index = (index + 1) % buttons.length;
+      else if (event.key === "ArrowLeft") index = (index + buttons.length - 1) % buttons.length;
+      else if (event.key === "Home") index = 0;
+      else if (event.key === "End") index = buttons.length - 1;
+      else return;
+
+      event.preventDefault();
+      buttons[index].focus();
+      buttons[index].click();
+    });
   });
 }
 
 return view.extend({
   load: function () {
-    return callStats();
+    return callStats().catch(function () { return null; });
   },
 
   render: function (data) {
@@ -856,7 +945,24 @@ return view.extend({
           rel: "stylesheet",
           href: L.resource("view/unbound-monitor/dashboard.css"),
         }),
-        E("h2", {}, [_("Unbound Performance Monitor")]),
+        E("div", { class: "unbound-page-header" }, [
+          E("div", { class: "unbound-page-title" }, [
+            E("span", { class: "unbound-brand-icon" }, [createIcon("activity")]),
+            E("div", {}, [
+              E("div", { class: "unbound-eyebrow" }, "UNBOUND / DNS"),
+              E("h2", {}, _("Unbound Performance Monitor")),
+              E("p", {}, _("Resolver activity, cache efficiency and response times at a glance.")),
+            ]),
+          ]),
+          E("div", { class: "unbound-update-info" }, [
+            E("div", { id: "unbound-connection", class: "unbound-status", role: "status" }, [
+              E("span", { class: "unbound-status-dot", "aria-hidden": "true" }),
+              E("span", { id: "unbound-connection-label" }, _("Connecting")),
+            ]),
+            E("span", {}, _("Refresh interval") + ": " + POLL_INTERVAL + "s"),
+            E("span", { id: "unbound-last-update" }, _("Waiting for data")),
+          ]),
+        ]),
         E("div", { id: "unbound-chart-tooltip", class: "unbound-chart-tooltip" }),
       ],
     );
@@ -868,17 +974,17 @@ return view.extend({
         "div",
         { class: "unbound-monitor-grid" },
         [
-          createCard(_("QPS"), "unbound-qps"),
-          createCard(_("Total Queries"), "unbound-queries"),
-          createCard(_("Cache Hit Rate"), "unbound-cache-hit"),
-          createCard(_("Avg Recursion Time"), "unbound-recursion"),
-          createCard(_("Bogus Answers"), "unbound-bogus"),
-          createCard(_("Runtime"), "unbound-uptime"),
+          createCard(_("QPS"), "unbound-qps", "activity", _("Queries per second")),
+          createCard(_("Total Queries"), "unbound-queries", "queries", _("Cumulative queries")),
+          createCard(_("Cache Hit Rate"), "unbound-cache-hit", "cache", _("Including ECS cache hits")),
+          createCard(_("Avg Recursion Time"), "unbound-recursion", "clock", _("Average resolution latency")),
+          createCard(_("Bogus Answers"), "unbound-bogus", "shield", _("DNSSEC validation failures")),
+          createCard(_("Runtime"), "unbound-uptime", "runtime", _("Time since service start")),
         ],
       ),
     );
 
-    const tabs = E("div", { class: "unbound-monitor-tabs" });
+    const tabs = E("div", { class: "unbound-monitor-tabs", role: "tablist", "aria-label": _("Unbound Monitor") });
     const tabDefinitions = [
       [_("Overview"), "overview", true],
       [_("Request List"), "requestlist", false],
@@ -900,21 +1006,38 @@ return view.extend({
       [
         E(
           "div",
-          { class: "cbi-section" },
+          { class: "unbound-chart-section" },
           [
-            E("h3", {}, [_("QPS Trend")]),
-            E("canvas", { id: "unbound-qps-chart", class: "unbound-chart" }),
+            E("div", { class: "unbound-section-header" }, [
+              E("div", {}, [
+                E("h3", {}, _("QPS Trend")),
+                E("p", {}, _("Recent query activity")),
+              ]),
+              E("div", { class: "unbound-chart-summary" }, [
+                E("span", {}, [_("Current"), E("strong", { id: "unbound-qps-current" }, "-")]),
+                E("span", {}, [_("Peak"), E("strong", { id: "unbound-qps-peak" }, "-")]),
+              ]),
+            ]),
+            E("div", { class: "unbound-qps-container" }, [
+              E("canvas", { id: "unbound-qps-chart", class: "unbound-chart", role: "img", "aria-label": _("QPS Trend") }),
+            ]),
           ],
         ),
         E(
           "div",
-          { class: "cbi-section unbound-section-spaced" },
+          { class: "unbound-chart-section" },
           [
-            E("h3", {}, [_("Response Time Histogram")]),
+            E("div", { class: "unbound-section-header" }, [
+              E("div", {}, [
+                E("h3", {}, _("Response Time Histogram")),
+                E("p", {}, _("Query counts by response time bucket")),
+              ]),
+              E("span", { class: "unbound-chart-legend" }, _("Queries")),
+            ]),
             E(
               "div",
               { class: "unbound-histogram-scroll" },
-              [E("canvas", { id: "unbound-histogram-chart", class: "unbound-chart" })],
+              [E("canvas", { id: "unbound-histogram-chart", class: "unbound-chart", role: "img", "aria-label": _("Response Time Histogram") })],
             ),
           ],
         ),
@@ -1041,6 +1164,17 @@ return view.extend({
     page.appendChild(bogusPanel);
     page.appendChild(rawPanel);
 
+    tabDefinitions.forEach(function (definition) {
+      const panel = page.querySelector("#unbound-tab-" + definition[1]);
+
+      panel.setAttribute("role", "tabpanel");
+      panel.setAttribute("aria-labelledby", "unbound-nav-" + definition[1]);
+      panel.setAttribute("tabindex", "0");
+      if (definition[1] !== "overview") {
+        panel.insertBefore(E("h3", { class: "unbound-detail-title" }, definition[0]), panel.firstChild);
+      }
+    });
+
     setupTabs(tabs);
     setupChartTooltips(page);
 
@@ -1049,15 +1183,29 @@ return view.extend({
       drawHistogram(currentHistogram);
     });
 
-    if (data && data.success) updateDashboard(data.stats);
+    if (data && data.success && data.stats) updateDashboard(data.stats);
+    else updateConnectionStatus(false);
+
+    // Redraw after mounting, stylesheet loading and container width changes.
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(function () {
+        if (!page.isConnected) return;
+        drawQpsChart();
+        drawHistogram(currentHistogram);
+      });
+
+      observer.observe(page);
+    }
 
     poll.add(
       L.bind(function () {
         return callStats()
           .then(function (result) {
-            if (result && result.success) updateDashboard(result.stats);
+            if (result && result.success && result.stats) updateDashboard(result.stats);
+            else updateConnectionStatus(false);
           })
           .catch(function (error) {
+            updateConnectionStatus(false);
             console.error("Failed to fetch Unbound stats", error);
           });
       }, this),

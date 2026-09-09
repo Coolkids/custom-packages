@@ -152,3 +152,51 @@ msgstr "安全响应数"
 
 msgid "Validation Operations"
 msgstr "验证操作数"
+
+msgid "Resolver activity, cache efficiency and response times at a glance."
+msgstr "实时掌握 DNS 查询、缓存效率与响应耗时。"
+
+msgid "Last updated"
+msgstr "上次更新"
+
+msgid "Live monitoring"
+msgstr "实时监控中"
+
+msgid "Update unavailable"
+msgstr "数据更新失败"
+
+msgid "Connecting"
+msgstr "连接中"
+
+msgid "Refresh interval"
+msgstr "刷新间隔"
+
+msgid "Waiting for data"
+msgstr "等待数据"
+
+msgid "Cumulative queries"
+msgstr "累计处理的查询数量"
+
+msgid "Including ECS cache hits"
+msgstr "包含 ECS 缓存命中"
+
+msgid "Average resolution latency"
+msgstr "递归解析的平均耗时"
+
+msgid "DNSSEC validation failures"
+msgstr "DNSSEC 验证失败的响应"
+
+msgid "Time since service start"
+msgstr "服务启动后的运行时间"
+
+msgid "Recent query activity"
+msgstr "最近的每秒查询量变化"
+
+msgid "Current"
+msgstr "当前"
+
+msgid "Peak"
+msgstr "峰值"
+
+msgid "Query counts by response time bucket"
+msgstr "按响应耗时区间统计查询数量"

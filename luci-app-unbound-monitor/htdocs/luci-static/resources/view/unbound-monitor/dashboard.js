@@ -213,7 +213,7 @@ function createIcon(name) {
   return svg;
 }
 
-function createCard(title, id, icon, description) {
+function createCard(title, id, icon, description, value) {
   return E(
     "div",
     { class: "unbound-monitor-card unbound-card-" + icon },
@@ -222,7 +222,11 @@ function createCard(title, id, icon, description) {
         E("div", { class: "unbound-monitor-card-title" }, title),
         E("span", { class: "unbound-card-icon" }, [createIcon(icon)]),
       ]),
-      E("div", { class: "unbound-monitor-card-value", id: id }, "-"),
+      E(
+        "div",
+        { class: "unbound-monitor-card-value", id: value ? null : id },
+        value || "-",
+      ),
       E("div", { class: "unbound-card-description" }, description),
     ],
   );
@@ -813,6 +817,7 @@ function updateDashboard(stats) {
     formatPercent(percent(cacheHits, baseCacheHits + cacheMisses)),
   );
   updateText("unbound-recursion", formatDuration(stats["total.recursion.time.avg"]));
+  updateText("unbound-recursion-median", formatDuration(stats["total.recursion.time.median"]));
   updateText("unbound-bogus", formatNumber(stats["num.answer.bogus"]));
 
   history.push({ time: now, qps: qps });
@@ -977,7 +982,19 @@ return view.extend({
           createCard(_("QPS"), "unbound-qps", "activity", _("Queries per second")),
           createCard(_("Total Queries"), "unbound-queries", "queries", _("Cumulative queries")),
           createCard(_("Cache Hit Rate"), "unbound-cache-hit", "cache", _("Including ECS cache hits")),
-          createCard(_("Avg Recursion Time"), "unbound-recursion", "clock", _("Average resolution latency")),
+          createCard(
+            _("Avg Recursion Time"),
+            "unbound-recursion",
+            "clock",
+            _("Average resolution latency"),
+            E("div", { class: "unbound-recursion-values" }, [
+              E("span", { id: "unbound-recursion" }, "-"),
+              E("small", { class: "unbound-recursion-median" }, [
+                _("Median") + ": ",
+                E("span", { id: "unbound-recursion-median" }, "-"),
+              ]),
+            ]),
+          ),
           createCard(_("Bogus Answers"), "unbound-bogus", "shield", _("DNSSEC validation failures")),
           createCard(_("Runtime"), "unbound-uptime", "runtime", _("Time since service start")),
         ],

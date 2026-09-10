@@ -301,14 +301,41 @@ return view.extend({
 		var status = linesToObject(data[0] && data[0].stdout);
 		var collectionRunning = status.state === 'collecting';
 		var reports = E('tbody');
-		var state = E('div', { 'class': 'alert-message notice' });
+		var reportCount = E('span', { 'class': 'ndpi-badge' });
+		var statusBadge = E('span', { 'class': 'ndpi-badge' });
+		var state = E('div', { 'class': 'ndpi-status', 'role': 'status' });
 		var duration = E('input', {
+			'id': 'ndpi-duration',
 			'class': 'cbi-input-text',
 			'type': 'number',
 			'min': 1,
 			'max': maxDuration,
-			'value': 300
+			'value': 300,
+			'aria-describedby': 'ndpi-duration-help',
+			'input': function() { updatePresets(); }
 		});
+		var presetButtons = [
+			[ 60, _('1 分钟') ], [ 300, _('5 分钟') ],
+			[ 900, _('15 分钟') ], [ 3600, _('1 小时') ]
+		].map(function(preset) {
+			return E('button', {
+				'class': 'ndpi-preset',
+				'type': 'button',
+				'data-duration': preset[0],
+				'click': function() {
+					duration.value = preset[0];
+					updatePresets();
+				}
+			}, preset[1]);
+		});
+
+		function updatePresets() {
+			presetButtons.forEach(function(button) {
+				button.disabled = duration.disabled;
+				button.setAttribute('aria-pressed', String(Number(duration.value) === Number(button.getAttribute('data-duration'))));
+			});
+		}
+
 		var startButton = E('button', {
 			'class': 'btn cbi-button cbi-button-action',
 			'click': ui.createHandlerFn(this, function() {
@@ -318,6 +345,8 @@ return view.extend({
 					return;
 				}
 				startButton.disabled = true;
+				duration.disabled = true;
+				updatePresets();
 				return fs.exec(collector, [ 'start', String(seconds) ]).then(function(result) {
 					if (result.code !== 0)
 						throw new Error(result.stderr || _('无法启动采集任务。'));
@@ -330,6 +359,7 @@ return view.extend({
 				}).finally(function() {
 					startButton.disabled = collectionRunning;
 					duration.disabled = collectionRunning;
+					updatePresets();
 				});
 			})
 		}, _('开始采集'));
@@ -376,15 +406,15 @@ return view.extend({
 				var packetLengthTotal = metrics.packetLengths.reduce(function(total, value) {
 					return total + value;
 				}, 0);
-				var canvas = E('canvas', { 'width': 420, 'height': 260 });
+				var canvas = E('canvas', { 'width': 420, 'height': 260, 'role': 'img', 'aria-label': _('协议流量分布，详细数据见下方列表。') });
 				var chartMessage = E('div', { 'class': 'cbi-value-description' }, _('正在加载协议流量图表…'));
 				var chartContainer = E('div', {
-					'style': 'max-width: 460px; margin: 1em auto; text-align: center'
+					'class': 'ndpi-chart'
 				}, [ canvas, chartMessage ]);
-				var packetLengthCanvas = E('canvas', { 'width': 580, 'height': 250 });
+				var packetLengthCanvas = E('canvas', { 'width': 580, 'height': 250, 'role': 'img', 'aria-label': _('包长分布：') + packetLengthChartData(metrics).labels.map(function(label, index) { return label + ': ' + formatNumber(metrics.packetLengths[index]); }).join('; ') });
 				var packetLengthMessage = E('div', { 'class': 'cbi-value-description' }, _('正在加载包长分布图…'));
 				var packetLengthContainer = E('div', {
-					'style': 'max-width: 620px; margin: 1em auto; text-align: center'
+					'class': 'ndpi-chart'
 				}, [ packetLengthCanvas, packetLengthMessage ]);
 				var trafficRows = [
 					[ _('以太网流量'), formatBytes(metrics.ethernetBytes) ],
@@ -404,7 +434,10 @@ return view.extend({
 						E('td', {}, formatBytes(protocol.bytes)),
 						E('td', {}, formatNumber(protocol.packets)),
 						E('td', {}, formatNumber(protocol.flows)),
-						E('td', {}, percent)
+						E('td', {}, [
+							E('span', { 'class': 'ndpi-share', 'aria-hidden': 'true' }, E('span', { 'style': 'width: ' + (protocolBytes ? protocol.bytes * 100 / protocolBytes : 0) + '%' })),
+							percent
+						])
 					]);
 				});
 				var close = function() {
@@ -423,63 +456,64 @@ return view.extend({
 				}
 
 				ui.showModal(_('nDPI 数据报告'), [
-					E('div', { 'class': 'cbi-map-descr' }, _('报告包含 ndpiReader 的 Traffic statistics 与协议识别结果。协议图按字节数排序，前 9 项之外的协议合并为“其他协议”。')),
-					E('h3', {}, _('Traffic statistics')),
-					E('div', { 'class': 'cbi-section' }, [
-						E('div', { 'class': 'cbi-value' }, [
-							E('label', { 'class': 'cbi-value-title' }, _('IP 流量')),
-							E('div', { 'class': 'cbi-value-field' }, formatBytes(metrics.bytes))
+					E('div', { 'class': 'ndpi-report' }, [
+						E('p', { 'class': 'ndpi-muted' }, _('本次采集的流量概览与协议识别结果。')),
+						E('div', { 'class': 'ndpi-summary' }, [
+							[ _('IP 流量'), formatBytes(metrics.bytes) ],
+							[ _('IP 数据包'), formatNumber(metrics.packets) ],
+							[ _('唯一流'), formatNumber(metrics.flows) ],
+							[ _('已识别协议'), formatNumber(protocols.length) ]
+						].map(function(metric) {
+							return E('div', { 'class': 'ndpi-metric' }, [
+								E('span', { 'class': 'ndpi-muted' }, metric[0]),
+								E('strong', {}, metric[1])
+							]);
+						})),
+						E('section', { 'class': 'ndpi-card' }, [
+							E('h3', {}, _('协议流量分布')),
+							E('p', { 'class': 'ndpi-muted' }, _('按流量排序，前 9 项之外的协议合并为“其他协议”。')),
+							chartContainer,
+							E('ul', { 'class': 'ndpi-legend' }, chartData(protocols).map(function(item) {
+								var name = item.label.substring(0, item.label.lastIndexOf(': '));
+								return E('li', {}, [
+									E('span', { 'class': 'ndpi-swatch', 'style': 'background: ' + item.color, 'aria-hidden': 'true' }),
+									E('span', { 'class': 'ndpi-legend-name', 'title': name }, name),
+									E('span', { 'class': 'ndpi-legend-value' }, formatBytes(item.value))
+								]);
+							}))
 						]),
-						E('div', { 'class': 'cbi-value' }, [
-							E('label', { 'class': 'cbi-value-title' }, _('IP 数据包')),
-							E('div', { 'class': 'cbi-value-field' }, formatNumber(metrics.packets))
+						E('section', { 'class': 'ndpi-card' }, [
+							E('h3', {}, _('协议明细（前 20 项）')),
+							E('div', { 'class': 'ndpi-table-wrap', 'tabindex': 0, 'role': 'region', 'aria-label': _('协议明细') }, E('table', { 'class': 'table ndpi-protocols' }, [
+								E('thead', {}, E('tr', {}, [ _('协议'), _('流量'), _('数据包'), _('流'), _('占比') ].map(function(label) {
+									return E('th', { 'scope': 'col' }, label);
+								}))),
+								E('tbody', {}, rows)
+							]))
 						]),
-						E('div', { 'class': 'cbi-value' }, [
-							E('label', { 'class': 'cbi-value-title' }, _('唯一流')),
-							E('div', { 'class': 'cbi-value-field' }, formatNumber(metrics.flows))
+						E('section', { 'class': 'ndpi-card' }, [
+							E('h3', {}, _('数据包长度分布')),
+							packetLengthContainer
 						]),
-						E('div', { 'class': 'cbi-value' }, [
-							E('label', { 'class': 'cbi-value-title' }, _('已识别协议')),
-							E('div', { 'class': 'cbi-value-field' }, formatNumber(protocols.length))
+						E('details', { 'class': 'ndpi-card ndpi-details' }, [
+							E('summary', {}, _('详细流量统计')),
+							E('div', { 'class': 'ndpi-table-wrap' }, E('table', { 'class': 'table' }, [
+								E('tbody', {}, trafficRows.map(function(row) {
+									return E('tr', {}, [ E('th', { 'scope': 'row' }, row[0]), E('td', {}, row[1]) ]);
+								}))
+							]))
 						])
 					]),
-					E('div', { 'style': 'max-height: 24vh; overflow: auto' }, E('table', { 'class': 'table cbi-section-table' }, [
-						E('tbody', {}, trafficRows.map(function(row) {
-							return E('tr', {}, [ E('th', {}, row[0]), E('td', {}, row[1]) ]);
-						}))
-					])),
-					packetLengthContainer,
-					E('h3', {}, _('协议流量分布')),
-					chartContainer,
-					E('h3', {}, _('协议明细（前 20 项）')),
-					E('div', { 'style': 'max-height: 30vh; overflow: auto' }, E('table', { 'class': 'table cbi-section-table' }, [
-						E('thead', {}, E('tr', {}, [
-							E('th', {}, _('协议')),
-							E('th', {}, _('流量')),
-							E('th', {}, _('数据包')),
-							E('th', {}, _('流')),
-							E('th', {}, _('占比'))
-						])),
-						E('tbody', {}, rows)
-					])),
-					E('div', { 'class': 'right', 'style': 'margin-top: 1em' }, [
+					E('div', { 'class': 'ndpi-actions' }, [
 						E('button', {
 							'class': 'btn cbi-button cbi-button-neutral',
-							'click': function() {
-								close();
-								showTextReport(reportText);
-							}
+							'click': function() { close(); showTextReport(reportText); }
 						}, _('文字报告')),
-						' ',
 						E('button', {
 							'class': 'btn cbi-button cbi-button-neutral',
-							'click': function() {
-								close();
-								showOutput(id, 'raw');
-							}
+							'click': function() { close(); showOutput(id, 'raw'); }
 						}, _('查看原始数据')),
-						' ',
-						E('button', { 'class': 'btn', 'click': close }, _('关闭'))
+						E('button', { 'class': 'btn cbi-button cbi-button-action', 'click': close }, _('关闭'))
 					])
 				]);
 
@@ -491,14 +525,15 @@ return view.extend({
 						if (protocolBytes > 0) {
 							activeCharts.push(new Chart(canvas.getContext('2d')).Doughnut(chartData(protocols), {
 								segmentStrokeWidth: 1,
-								percentageInnerCutout: 45,
+								percentageInnerCutout: 65,
+								responsive: true,
 								showTooltips: true
 							}));
 							chartMessage.textContent = _('将鼠标悬停在图表区域可查看协议与流量。');
 						}
 						if (packetLengthTotal > 0) {
 							registerPacketLengthChart(Chart);
-							activeCharts.push(new Chart(packetLengthCanvas.getContext('2d')).PacketLength(packetLengthChartData(metrics)));
+							activeCharts.push(new Chart(packetLengthCanvas.getContext('2d')).PacketLength(packetLengthChartData(metrics), { responsive: true }));
 							packetLengthMessage.textContent = _('横轴为数据包长度（字节），纵轴为数据包数量。');
 						}
 					}).catch(function(error) {
@@ -514,14 +549,16 @@ return view.extend({
 		}
 
 		function renderReports(text) {
-			dom.content(reports, String(text || '').trim().split('\n').filter(Boolean).map(function(line) {
+			var entries = String(text || '').trim().split('\n').filter(Boolean);
+			reportCount.textContent = _('%s / 10 条记录').format(entries.length);
+			dom.content(reports, entries.map(function(line) {
 				var fields = line.split('\t');
 				var id = fields[0];
 				return E('tr', {}, [
-					E('td', { 'style': 'white-space: nowrap' }, formatTime(fields[1])),
-					E('td', {}, fields[3] || '-'),
+					E('td', {}, formatTime(fields[1])),
+					E('td', {}, E('span', { 'class': 'ndpi-device' }, fields[3] || '-')),
 					E('td', { 'style': 'white-space: nowrap' }, formatDuration(fields[2])),
-					E('td', { 'class': 'cbi-section-actions', 'style': 'white-space: nowrap' }, [
+					E('td', {}, [
 						E('button', {
 							'class': 'btn cbi-button cbi-button-action',
 							'click': ui.createHandlerFn(this, showReport, id)
@@ -535,7 +572,10 @@ return view.extend({
 				]);
 			}));
 			if (!reports.childNodes.length)
-				reports.appendChild(E('tr', {}, E('td', { 'colspan': 4, 'class': 'cbi-section-table-cell' }, _('尚无已完成的采集数据。'))));
+				reports.appendChild(E('tr', {}, E('td', { 'colspan': 4 }, E('div', { 'class': 'ndpi-empty' }, [
+					E('strong', {}, _('还没有采集记录')),
+					E('span', { 'class': 'ndpi-muted' }, _('选择采集时长并开始，完成后会在这里自动显示报告。'))
+				]))));
 		}
 
 		function renderStatus(next) {
@@ -545,11 +585,35 @@ return view.extend({
 				failed: _('最近一次采集失败：%s').format(next.error || _('未知错误')),
 				idle: _('当前没有运行中的采集任务。')
 			};
-			state.className = next.state === 'failed' ? 'alert-message warning' : 'alert-message notice';
-			state.textContent = messages[next.state] || messages.idle;
-			collectionRunning = next.state === 'collecting';
+			var labels = {
+				collecting: _('正在采集'), complete: _('采集完成'),
+				failed: _('采集失败'), idle: _('等待采集')
+			};
+			var currentState = labels[next.state] ? next.state : 'idle';
+			statusBadge.textContent = labels[currentState];
+			statusBadge.setAttribute('data-state', currentState);
+			state.setAttribute('data-state', currentState);
+			var content = [
+				E('strong', {}, labels[currentState]),
+				E('div', { 'class': 'ndpi-muted' }, messages[currentState])
+			];
+			collectionRunning = currentState === 'collecting';
+			if (collectionRunning && Number(next.duration) > 0 && Number(next.started) > 0) {
+				var elapsed = Math.max(0, Math.floor(Date.now() / 1000) - Number(next.started));
+				var remaining = Math.max(0, Number(next.duration) - elapsed);
+				content.push(E('progress', {
+					'class': 'ndpi-progress', 'max': Number(next.duration),
+					'value': Math.min(elapsed, Number(next.duration)), 'aria-label': _('采集进度')
+				}));
+				content.push(E('div', { 'class': 'ndpi-muted' }, remaining
+					? _('预计剩余 %s').format(formatDuration(remaining))
+					: _('正在结束采集并生成报告…')));
+			}
+			dom.content(state, content);
+			startButton.textContent = collectionRunning ? _('采集中…') : _('开始采集');
 			startButton.disabled = collectionRunning;
 			duration.disabled = collectionRunning;
+			updatePresets();
 		}
 
 		function refresh() {
@@ -566,39 +630,42 @@ return view.extend({
 		renderReports(data[1] && data[1].stdout);
 		poll.add(refresh, 5);
 
-		return E([], [
+		return E('div', { 'class': 'ndpi-page' }, [
+			E('link', { 'rel': 'stylesheet', 'href': L.resource('view/ndpi_collector/overview.css') }),
 			E('h2', {}, _('nDPI WAN 流量分析')),
-			E('div', { 'class': 'cbi-map-descr' }, _('使用 ndpiReader 对当前 WAN 物理接口进行限时深度协议识别。采集在后台继续运行，最多可保留最近 10 次结果。')),
-			E('fieldset', { 'class': 'cbi-section' }, [
-				E('legend', {}, _('采集设置')),
-				E('div', { 'class': 'cbi-value' }, [
-					E('label', { 'class': 'cbi-value-title' }, _('采集时长（秒）')),
-					E('div', { 'class': 'cbi-value-field' }, [
-						duration,
-						' ', startButton,
-						E('div', { 'class': 'cbi-value-description' }, _('可设置 1 秒至 43200 秒（12 小时）。同一时间只能运行一个采集任务。'))
-					])
-				]),
-				state
+			E('div', { 'class': 'ndpi-heading' }, [
+				E('div', { 'class': 'cbi-map-descr' }, _('限时采集 WAN 流量，了解网络中的协议与应用分布。')),
+				statusBadge
 			]),
-			E('fieldset', { 'class': 'cbi-section' }, [
-				E('legend', {}, _('已保存的采集数据')),
-				E('div', { 'class': 'cbi-section-descr' }, _('结果保存在内存目录中，设备重启后会清除。每次采集完成后将自动删除最早的记录，仅保留 10 次。')),
-				E('table', { 'class': 'table cbi-section-table', 'style': 'width: 100%; table-layout: fixed' }, [
-					E('colgroup', {}, [
-						E('col', { 'style': 'width: 25%' }),
-						E('col', { 'style': 'width: 15%' }),
-						E('col', { 'style': 'width: 16%' }),
-						E('col', { 'style': 'width: 44%' })
+			E('section', { 'class': 'ndpi-card' }, [
+				E('div', { 'class': 'ndpi-section-heading' }, [
+					E('h3', {}, _('新建采集')),
+					E('span', { 'class': 'ndpi-muted' }, _('后台运行 · 每 5 秒刷新状态'))
+				]),
+				E('div', { 'class': 'ndpi-setup' }, [
+					E('div', {}, [
+						E('label', { 'class': 'ndpi-label', 'for': 'ndpi-duration' }, _('采集时长')),
+						E('div', { 'class': 'ndpi-input-row' }, [ duration, E('span', {}, _('秒')), startButton ]),
+						E('div', { 'class': 'ndpi-presets', 'role': 'group', 'aria-label': _('常用采集时长') }, presetButtons),
+						E('p', { 'class': 'ndpi-muted', 'id': 'ndpi-duration-help' }, _('支持 1 秒至 12 小时，同一时间只能运行一个采集任务。'))
 					]),
-					E('thead', {}, E('tr', {}, [
-						E('th', { 'class': 'cbi-section-table-cell' }, _('完成时间')),
-						E('th', { 'class': 'cbi-section-table-cell' }, _('WAN 接口')),
-						E('th', { 'class': 'cbi-section-table-cell' }, _('采集时长')),
-						E('th', { 'class': 'cbi-section-table-cell' }, _('操作'))
-					])),
-					reports
+					state
 				])
+			]),
+			E('section', { 'class': 'ndpi-card' }, [
+				E('div', { 'class': 'ndpi-section-heading' }, [
+					E('div', {}, [
+						E('h3', {}, _('采集记录')),
+						E('p', { 'class': 'ndpi-muted' }, _('保留最近 10 次结果，设备重启后清除。'))
+					]),
+					reportCount
+				]),
+				E('div', { 'class': 'ndpi-table-wrap', 'tabindex': 0, 'role': 'region', 'aria-label': _('采集记录') }, E('table', { 'class': 'table ndpi-history' }, [
+					E('thead', {}, E('tr', {}, [ _('完成时间'), _('WAN 接口'), _('采集时长'), _('操作') ].map(function(label) {
+						return E('th', { 'scope': 'col' }, label);
+					}))),
+					reports
+				]))
 			])
 		]);
 	},

@@ -183,6 +183,9 @@ msgstr "包含 ECS 缓存命中"
 msgid "Average resolution latency"
 msgstr "递归解析的平均耗时"
 
+msgid "Median"
+msgstr "中位数"
+
 msgid "DNSSEC validation failures"
 msgstr "DNSSEC 验证失败的响应"
 

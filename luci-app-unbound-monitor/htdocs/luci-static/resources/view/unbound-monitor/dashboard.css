@@ -184,6 +184,20 @@
 	overflow-wrap: anywhere;
 }
 
+.unbound-recursion-values > span {
+	display: block;
+}
+
+.unbound-recursion-median {
+	display: block;
+	margin-top: 4px;
+	color: var(--um-muted);
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1.4;
+	letter-spacing: 0;
+}
+
 .unbound-card-activity .unbound-monitor-card-value {
 	color: var(--um-accent);
 }

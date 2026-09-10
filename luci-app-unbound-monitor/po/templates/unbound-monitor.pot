@@ -184,6 +184,9 @@ msgstr ""
 msgid "Average resolution latency"
 msgstr ""
 
+msgid "Median"
+msgstr ""
+
 msgid "DNSSEC validation failures"
 msgstr ""
 

@@ -34,11 +34,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
         
-      - name: Run update scripts
+      - name: Run update scripts (including singbox-ruleset)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           for script in .github/scripts/*.sh; do
+            echo "Running $script"
             bash "$script"
           done
 

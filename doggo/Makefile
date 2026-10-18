@@ -5,12 +5,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=doggo
-PKG_VERSION:=1.4.0
+PKG_VERSION:=1.4.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/mr-karan/doggo/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=e0d043aa34fb8daa44df07558fd32fe2686eba6644d5f6834edbc8a789d42e1d
+PKG_HASH:=d707bd7948cd560c290298ba623f70681e93862eed2c8555b09b7b90f5610c9c
 
 PKG_MAINTAINER:=Coolkid
 PKG_LICENSE:=GPLv3

@@ -58,7 +58,7 @@ jobs:
         uses: immortalwrt/gh-action-sdk@master
         env:
           # OpenWrt Snapshot SDK
-          ARCH: x86_64-SNAPSHOT
+          ARCH: x86_64-snapshot
 
           # Custom feed name
           FEEDNAME: custom_packages

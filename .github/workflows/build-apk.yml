@@ -55,10 +55,10 @@ jobs:
           git submodule status --recursive
 
       - name: Build OpenWrt Snapshot packages
-        uses: immortalwrt/gh-action-sdk@master
+        uses: openwrt/gh-action-sdk@main
         env:
           # OpenWrt Snapshot SDK
-          ARCH: x86_64-snapshot
+          ARCH: x86_64-SNAPSHOT
 
           # Custom feed name
           FEEDNAME: custom_packages

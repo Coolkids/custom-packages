@@ -22,9 +22,6 @@
 [submodule "luci-app-easytier"]
 	path = luci-app-easytier
 	url = https://github.com/EasyTier/luci-app-easytier
-[submodule "curl"]
-	path = curl
-	url = https://github.com/sbwml/feeds_packages_net_curl
 [submodule "luci-app-oxidns"]
 	path = luci-app-oxidns
 	url = https://github.com/svenshi/luci-app-oxidns
